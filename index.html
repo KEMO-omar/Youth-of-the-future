@@ -104,8 +104,8 @@
       <h1 class="main-name">YOUTH FUTURE</h1>
       <p style="color: var(--a); font-weight: 900; font-size: 1.4rem; text-shadow: 0 0 10px var(--a);">أقوى مجتمع لطلاب 1 ثانوي 🚀🔥</p>
       
-      <a href="https://docs.google.com/forms/d/e/1FAIpQLSdvNZ0UaxLWkUVLsffAkU0d_6sSMe3JqD0SKk-sBhmWqDZktA/viewform" target="_blank" class="main-btn">
-        🔥 دخول الاختبار التجريبي 🔥
+      <a href="https://chat.whatsapp.com/FiwJv6jlvnM6gUy2dd4WmN" target="_blank" class="main-btn">
+        🔥 انضم لمجتمعنا الآن 🔥
       </a>
       <p style="margin-top:20px; opacity:0.7;">اضغط في أي مكان في الشاشة وشوف المفاجأة! ✨</p>
     </div>
@@ -138,11 +138,40 @@
         <a href="https://docs.google.com/forms/d/e/1FAIpQLSdvNZ0UaxLWkUVLsffAkU0d_6sSMe3JqD0SKk-sBhmWqDZktA/viewform" target="_blank" class="exam-link">يلا بينا 🚀</a>
       </div>
       
-      <div class="subject-card"><i class="fas fa-history"></i><h3>التاريخ 🏺</h3><p>قريباً.. هنلف العالم القديم!</p><a href="#" class="exam-link">انتظرونا ⏳</a></div>
-      <div class="subject-card"><i class="fas fa-user-graduate"></i><h3>الفلسفة 🧠</h3><p>شغل عقلك وجهز نفسك للأسئلة.</p><a href="#" class="exam-link">انتظرونا ⏳</a></div>
-      <div class="subject-card"><i class="fas fa-flask"></i><h3>العلوم 🔬</h3><p>المنهج الجديد بلمسة سحرية.</p><a href="#" class="exam-link">انتظرونا ⏳</a></div>
-      <div class="subject-card"><i class="fas fa-globe-americas"></i><h3>الإنجليزية 🇬🇧</h3><p>Master English easily!</p><a href="#" class="exam-link">انتظرونا ⏳</a></div>
-      <div class="subject-card"><i class="fas fa-infinity"></i><h3>الرياضيات 📐</h3><p>الأرقام لعبتنا، والتقفيل هدفنا.</p><a href="#" class="exam-link">انتظرونا ⏳</a></div>
+      <div class="subject-card">
+        <i class="fas fa-history"></i>
+        <h3>التاريخ 🏺</h3>
+        <p>ادخل وشوف عظمة التاريخ!</p>
+        <a href="" target="_blank" class="exam-link">ابدأ الآن 🚀</a>
+      </div>
+
+      <div class="subject-card">
+        <i class="fas fa-user-graduate"></i>
+        <h3>الفلسفة 🧠</h3>
+        <p>شغل عقلك وجهز نفسك للأسئلة.</p>
+        <a href="" target="_blank" class="exam-link">ابدأ الآن 🚀</a>
+      </div>
+
+      <div class="subject-card">
+        <i class="fas fa-flask"></i>
+        <h3>العلوم 🔬</h3>
+        <p>المنهج الجديد بلمسة سحرية.</p>
+        <a href="" target="_blank" class="exam-link">ابدأ الآن 🚀</a>
+      </div>
+
+      <div class="subject-card">
+        <i class="fas fa-globe-americas"></i>
+        <h3>الإنجليزية 🇬🇧</h3>
+        <p>Master English easily!</p>
+        <a href="" target="_blank" class="exam-link">ابدأ الآن 🚀</a>
+      </div>
+
+      <div class="subject-card">
+        <i class="fas fa-infinity"></i>
+        <h3>الرياضيات 📐</h3>
+        <p>الأرقام لعبتنا، والتقفيل هدفنا.</p>
+        <a href="" target="_blank" class="exam-link">ابدأ الآن 🚀</a>
+      </div>
     </div>
   </section>
 
@@ -150,19 +179,15 @@
 </div>
 
 <script>
-  // التنقل السلس مع زووم
   function nav(id, el) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
     document.getElementById(id).classList.add('active');
     if(el) el.classList.add('active');
-    
-    // صوت خفيف او اهتزاز لو الموبايل بيدعم
     if (window.navigator.vibrate) window.navigator.vibrate(20);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  // خلفية الكون المتفاعلة (نفس روح كرملات)
   const canvas = document.getElementById('cosmos');
   const ctx = canvas.getContext('2d');
   let ps = [];
@@ -180,13 +205,11 @@
     update() { this.x+=this.v.x; this.y+=this.v.y; this.a-=0.02; }
   }
 
-  // التفاعل عند الضغط (انفجار الوان)
   window.addEventListener('mousedown', (e) => {
     const color = Math.random() > 0.5 ? '#00f2ff' : '#ccff00';
     for(let i=0; i<30; i++) ps.push(new P(e.clientX, e.clientY, color));
   });
 
-  // دعم اللمس للموبايل
   window.addEventListener('touchstart', (e) => {
     const color = '#bc00ff';
     for(let i=0; i<20; i++) ps.push(new P(e.touches[0].clientX, e.touches[0].clientY, color));
