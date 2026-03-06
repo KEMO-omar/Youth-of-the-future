@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>لوحة التحكم الاحترافية | إدارة شباب المستقبل ⚡</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Orbitron:wght@700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    :root {
+      --p: #00f2ff; --s: #bc00ff; --a: #ccff00; --bg: #050505;
+      --card: rgba(255, 255, 255, 0.05); --red: #ff4757; --green: #2ed573;
+    }
+    body { 
+      margin: 0; background: var(--bg); color: #fff; font-family: 'Cairo', sans-serif;
+      min-height: 100vh;
+    }
+
+    .admin-wrapper { max-width: 1000px; margin: 0 auto; padding: 20px; }
+    
+    /* Tabs Navigation */
+    .tabs-nav { 
+      display: flex; gap: 10px; margin-bottom: 25px; overflow-x: auto; padding-bottom: 10px;
+      sticky: top; top: 0; z-index: 100; background: var(--bg);
+    }
+    .tab-btn { 
+      padding: 12px 20px; background: var(--card); border: 1px solid #333; color: #fff;
+      border-radius: 15px; cursor: pointer; white-space: nowrap; font-weight: bold; transition: 0.3s;
+    }
+    .tab-btn.active { background: var(--p); color: #000; border-color: var(--p); box-shadow: 0 0 15px var(--p); }
+
+    .tab-content { display: none; animation: fadeIn 0.5s ease; }
+    .tab-content.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .glass-card { 
+      background: var(--card); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 25px; padding: 25px; margin-bottom: 25px;
+    }
+
+    /* Table Style */
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th { text-align: right; color: var(--p); border-bottom: 2px solid var(--p); padding: 10px; }
+    td { padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    tr:hover { background: rgba(255,255,255,0.02); }
+
+    /* Forms */
+    input, select, textarea { 
+      width: 100%; padding: 12px; margin: 8px 0; background: rgba(0,0,0,0.4); 
+      border: 1px solid #444; border-radius: 10px; color: #fff; font-family: 'Cairo';
+    }
+    .option-row { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
+    .btn { 
+      padding: 10px 20px; border-radius: 10px; border: none; font-weight: 900; 
+      cursor: pointer; transition: 0.3s; font-family: 'Cairo';
+    }
+    .btn-p { background: var(--p); color: #000; }
+    .btn-red { background: var(--red); color: #fff; }
+
+    #loginOverlay {
+      position: fixed; inset: 0; background: var(--bg); z-index: 9999;
+      display: flex; justify-content: center; align-items: center;
+    }
+  </style>
+</head>
+<body>
+
+<div id="loginOverlay">
+    <div class="glass-card" style="text-align: center; width: 350px;">
+        <h2>🔐 دخول الإدارة</h2>
+        <input type="password" id="adminKey" placeholder="كلمة المرور">
+        <button class="btn btn-p" style="width: 100%;" onclick="verifyAdmin()">دخول</button>
+    </div>
+</div>
+
+<div class="admin-wrapper">
+    <div class="tabs-nav">
+        <button class="tab-btn active" onclick="showTab('since-tab', this)">📁 ملف Since</button>
+        <button class="tab-btn" onclick="showTab('exam-tab', this)">📝 إضافة امتحان</button>
+        <button class="tab-btn" onclick="showTab('results-tab', this)">🏆 نتائج الطلاب</button>
+        <button class="tab-btn" onclick="showTab('manage-tab', this)">⚙️ إدارة الامتحانات</button>
+    </div>
+
+    <div id="since-tab" class="tab-content active">
+        <div class="glass-card">
+            <h2>إدارة ملف Since.html</h2>
+            <input type="text" id="sinceUrl" placeholder="رابط الملف (مثلاً: Since.html)">
+            <div style="display:flex; gap:10px;">
+                <button class="btn btn-p" onclick="updateSince(true)">تفعيل وظهور</button>
+                <button class="btn btn-red" onclick="updateSince(false)">إخفاء الملف</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="exam-tab" class="tab-content">
+        <div class="glass-card">
+            <h2>إنشاء امتحان جديد</h2>
+            <input type="text" id="exTitle" placeholder="عنوان الامتحان">
+            <input type="text" id="exDesc" placeholder="وصف الامتحان">
+            <input type="text" id="exUrl" placeholder="رابط الملف (مثلاً: quiz1.html)">
+            <button class="btn btn-p" style="width:100%" onclick="saveExam()">حفظ ونشر الامتحان 🚀</button>
+        </div>
+    </div>
+
+    <div id="results-tab" class="tab-content">
+        <div class="glass-card">
+            <h2>سجل درجات الطلاب</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>اسم الطالب</th>
+                        <th>الدرجة</th>
+                        <th>الوقت</th>
+                        <th>التاريخ</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsBody">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="manage-tab" class="tab-content">
+        <div class="glass-card">
+            <h2>التحكم في الامتحانات الحالية</h2>
+            <div id="manageExamsList"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+  // --- إعدادات Firebase ---
+  const firebaseConfig = {
+      apiKey: "AIzaSyBMBd9C41EyU7kWi06CVMgXrYFBVAvU1v8",
+      authDomain: "shapap-13c58.firebaseapp.com",
+      projectId: "shapap-13c58",
+      storageBucket: "shapap-13c58.firebasestorage.app",
+      messagingSenderId: "818487036065",
+      appId: "1:818487036065:web:350734adcc4fcd779c48e0"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  function verifyAdmin() {
+      if(document.getElementById('adminKey').value === "1511") {
+          document.getElementById('loginOverlay').style.display = 'none';
+          loadData();
+      } else {
+          Swal.fire('خطأ', 'كلمة المرور غلط!', 'error');
+      }
+  }
+
+  function showTab(tabId, btn) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      btn.classList.add('active');
+  }
+
+  // تحديث ملف Since
+  async function updateSince(active) {
+      const url = document.getElementById('sinceUrl').value || "Since.html";
+      await db.collection("settings").doc("since_file").set({ url, active });
+      Swal.fire('تم', 'تم تحديث حالة ملف Since', 'success');
+  }
+
+  // حفظ امتحان
+  async function saveExam() {
+      const title = document.getElementById('exTitle').value;
+      const desc = document.getElementById('exDesc').value;
+      const url = document.getElementById('exUrl').value;
+      if(!title || !url) return Swal.fire('نقص بيانات', 'املأ الحقول', 'warning');
+      
+      await db.collection("exams").add({ title, desc, url, createdAt: Date.now() });
+      Swal.fire('تم النشر', 'الامتحان الآن متاح للطلاب', 'success');
+  }
+
+  // تحميل البيانات (النتائج والامتحانات)
+  function loadData() {
+      // تحميل النتائج
+      db.collection("science_ranks").orderBy("at", "desc").onSnapshot(snap => {
+          const body = document.getElementById('resultsBody');
+          body.innerHTML = '';
+          snap.forEach(doc => {
+              const d = doc.data();
+              const date = new Date(d.at).toLocaleDateString('ar-EG');
+              body.innerHTML += `
+                  <tr>
+                      <td>${d.name}</td>
+                      <td style="color:var(--a)">${d.score}%</td>
+                      <td>${d.time} ثانية</td>
+                      <td>${date}</td>
+                  </tr>
+              `;
+          });
+      });
+
+      // تحميل قائمة الامتحانات للحذف
+      db.collection("exams").onSnapshot(snap => {
+          const list = document.getElementById('manageExamsList');
+          list.innerHTML = '';
+          snap.forEach(doc => {
+              list.innerHTML += `
+                  <div style="display:flex; justify-content:space-between; padding:15px; border-bottom:1px solid #333;">
+                      <span>${doc.data().title}</span>
+                      <button class="btn btn-red" onclick="deleteExam('${doc.id}')">حذف</button>
+                  </div>
+              `;
+          });
+      });
+  }
+
+  async function deleteExam(id) {
+      if(confirm('متأكد انك عايز تحذف الامتحان ده؟')) {
+          await db.collection("exams").doc(id).delete();
+      }
+  }
+</script>
+</body>
+</html>
