@@ -9,7 +9,7 @@
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, set, push, get, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBMBd9C41EyU7kWi06CVMgXrYFBVAvU1v8",
@@ -25,16 +25,26 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        window.saveToFirebase = function(studentName, score) {
+        // وظيفة الحفظ المعدلة لتشمل البيانات الجديدة
+        window.saveToFirebase = function(studentData, score) {
             try {
                 const resultsRef = ref(db, 'results');
                 const newResultRef = push(resultsRef);
                 set(newResultRef, {
-                    name: studentName,
+                    name: studentData.name,
+                    phone: studentData.phone,
+                    group: studentData.group,
                     score: score,
                     total: 20,
                     timestamp: new Date().toLocaleString()
                 });
+                
+                // حفظ في المتصفح لمنع التكرار
+                localStorage.setItem('math_exam_done', JSON.stringify({
+                    name: studentData.name,
+                    score: score,
+                    date: new Date().toLocaleDateString()
+                }));
             } catch(e) { console.error(e); }
         };
     </script>
@@ -83,9 +93,8 @@
         .header h1 { margin: 0; color: var(--primary); font-size: 2rem; letter-spacing: -1px; }
         .header p { color: #94a3b8; margin: 5px 0; font-size: 0.9rem; }
 
-        /* Input Styles */
-        .input-group { margin: 25px 0; position: relative; }
-        input[type="text"] {
+        .input-group { margin: 15px 0; position: relative; }
+        input[type="text"], select {
             width: 100%;
             padding: 15px 20px;
             background: rgba(15, 23, 42, 0.5);
@@ -95,10 +104,11 @@
             font-size: 1.1rem;
             outline: none;
             transition: 0.3s;
+            margin-bottom: 10px;
         }
-        input[type="text"]:focus { border-color: var(--primary); box-shadow: 0 0 15px rgba(56, 189, 248, 0.2); }
+        input[type="text"]:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 15px rgba(56, 189, 248, 0.2); }
+        option { background: #1e293b; color: white; }
 
-        /* Question Styles */
         .q-box { display: none; animation: slideIn 0.5s forwards; }
         .q-box.active { display: block; }
         .q-text { font-size: 1.25rem; margin-bottom: 25px; line-height: 1.7; }
@@ -118,11 +128,9 @@
         .opt-btn:hover { background: rgba(71, 85, 105, 0.6); transform: translateY(-2px); }
         .opt-btn.selected { background: var(--primary); color: #0f172a; font-weight: 700; border-color: var(--primary); }
 
-        /* Progress Bar */
         .progress-container { height: 8px; background: #334155; border-radius: 4px; margin-bottom: 30px; overflow: hidden; }
         .progress-bar { height: 100%; background: linear-gradient(90deg, var(--secondary), var(--primary)); width: 0%; transition: 0.4s; }
 
-        /* Buttons */
         .btn {
             padding: 12px 30px;
             border-radius: 12px;
@@ -136,7 +144,6 @@
         .btn-primary:hover { opacity: 0.9; transform: scale(1.05); }
         .btn-outline { background: transparent; border: 1px solid #475569; color: var(--text); }
 
-        /* Review Screen */
         .review-item {
             padding: 15px;
             border-radius: 12px;
@@ -148,7 +155,6 @@
 
         @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Custom Modal */
         #custom-modal {
             display: none;
             position: fixed;
@@ -158,8 +164,9 @@
             justify-content: center; align-items: center;
         }
         .modal-content {
-            background: var(--card-bg);
+            background: #1e293b;
             padding: 30px; border-radius: 20px; text-align: center; max-width: 400px;
+            border: 1px solid var(--primary);
         }
     </style>
 </head>
@@ -169,14 +176,24 @@
     <div class="glass-card" id="main-card">
         <div class="header">
             <h1>بنك أسئلة الرياضيات</h1>
-            <p>برمجة: <b>كريم عمر</b> |<b> محمد زناتي</b></p>
+            <p>برمجة: <b>كريم عمر</b> | <b>محمد زناتي</b></p>
         </div>
 
         <div id="login-section">
             <div class="input-group">
                 <input type="text" id="studentName" placeholder="الاسم الرباعي للطالب...">
+                <input type="text" id="studentPhone" placeholder="رقم الواتساب...">
+                <select id="studentGroup">
+                    <option value="" disabled selected>اختر مجموعتك</option>
+                    <option value="الدراسه الاعظم">الدراسه الاعظم</option>
+                    <option value="شباب المستقبل">شباب المستقبل</option>
+                    <option value="طلاب اولى ثانوي ازهر و عام">طلاب اولى ثانوي ازهر و عام</option>
+                    <option value="اولى ثانوي">اولى ثانوي</option>
+                    <option value="الطريق الى الجنه">الطريق الى الجنه</option>
+                </select>
             </div>
             <button class="btn btn-primary" style="width: 100%;" onclick="startExam()">دخول الاختبار</button>
+            <div id="prev-score-hint" style="text-align: center; margin-top: 15px; color: var(--primary); font-size: 0.85rem;"></div>
         </div>
 
         <div id="quiz-section" style="display:none;">
@@ -196,7 +213,7 @@
                 <p>إليك مراجعة لإجاباتك:</p>
             </div>
             <div id="review-list"></div>
-            <button class="btn btn-primary" style="width: 100%; margin-top: 20px;" onclick="location.reload()">إعادة الاختبار</button>
+            <button class="btn btn-primary" style="width: 100%; margin-top: 20px;" onclick="location.reload()">الخروج</button>
         </div>
     </div>
 </div>
@@ -204,9 +221,9 @@
 <div id="custom-modal">
     <div class="modal-content">
         <h3 id="modal-title">تنبيه</h3>
-        <p id="modal-text"></p>
+        <p id="modal-text" style="margin: 15px 0; line-height: 1.6;"></p>
         <div style="display: flex; gap: 10px; justify-content: center;">
-            <button class="btn btn-outline" onclick="closeModal()">إلغاء</button>
+            <button class="btn btn-outline" id="cancel-modal-btn" onclick="closeModal()">إلغاء</button>
             <button class="btn btn-primary" id="confirm-btn">تأكيد</button>
         </div>
     </div>
@@ -214,121 +231,63 @@
 
 <script>
     const questions = [
-        { 
-            q: "إذا كان ( س ، 6 ) - ( 1 ، ص ) = ( 2 ، 5 ) فإن س + ص = ...", 
-            options: ["1", "2", "4", "5"], 
-            correct: 2 
-        },
-        { 
-            q: "إذا كانت المصفوفة أ = <br> [ 0 &nbsp;&nbsp; 2س-5 ] <br> [ 12 &nbsp;&nbsp; 0 ] <br> شبه متماثلة، فإن س = ...", 
-            options: ["2", "4", "-2", "-4"], 
-            correct: 1 
-        },
-        { 
-            q: "إذا كانت أ ، ب مصفوفتان بحيث أ ب = I (مصفوفة الوحدة)، فإن أ⁻¹ يساوي:", 
-            options: ["ب", "أ", "I", "ب⁻¹"], 
-            correct: 0 
-        },
-        { 
-            q: "المصفوفة <br> [ س+4 &nbsp;&nbsp; 0 ] <br> [ 0 &nbsp;&nbsp; س-4 ] <br> ليس لها معكوس ضربي عندما س تنتمي لـ:", 
-            options: ["{4}", "{-4}", "{4, -4}", "{0}"], 
-            correct: 2 
-        },
-        { 
-            q: "قيمة س التي تحقق: <br> [ 2 &nbsp;&nbsp; س ] = [ 2 &nbsp;&nbsp; 4 ] <br> [ 3 &nbsp;&nbsp; 5 ] &nbsp;&nbsp; [ 3 &nbsp;&nbsp; 5 ]", 
-            options: ["2", "3", "4", "5"], 
-            correct: 2 
-        },
-        { 
-            q: "إذا كان: <br> [ 3 &nbsp; 2 ] [ 2 &nbsp;&nbsp; 1 ] = [ 6 &nbsp; 1 ] <br> [ س &nbsp; 1 ] [ 0 &nbsp; -1 ] &nbsp; [ 4 &nbsp; 1 ] <br> فإن س = ...", 
-            options: ["2", "3", "4", "5"], 
-            correct: 0 
-        },
-        { 
-            q: "جا²(180° - θ) + جا²(270° - θ) = ...", 
-            options: ["جا²θ", "جتا²θ", "1", "صفر"], 
-            correct: 2 
-        },
-        { 
-            q: "قيمة المقدار: قتا θ جا θ + 2 جتا θ قا θ + 3 ظتا θ ظا θ =", 
-            options: ["4", "5", "6", "1"], 
-            correct: 2 
-        },
-        { 
-            q: "إذا كان أ + ب = 90° ، فإن ظا أ ظا ب = ...", 
-            options: ["صفر", "1", "-1", "2"], 
-            correct: 1 
-        },
-        { 
-            q: "قطاع دائري محيطه 44 سم وطول نصف قطر دائرته 14 سم، فإن طول قوسه (ل) =", 
-            options: ["8", "14", "16", "32"], 
-            correct: 2 
-        },
-        { 
-            q: "مساحة المثلث الذي أطوال أضلاعه 6 سم ، 8 سم ، 10 سم تساوي:", 
-            options: ["24 سم²", "30 سم²", "48 سم²", "60 سم²"], 
-            correct: 0 
-        },
-        { 
-            q: "الصورة القطبية للمتجه ن = ( 3 ، 3√3 ) هي:", 
-            options: ["( 6 ، 30° )", "( 6 ، 60° )", "( 3 ، 60° )", "( 6 ، 120° )"], 
-            correct: 1 
-        },
-        { 
-            q: "إذا كان أ = ( ك ، 2 ) ، ب = ( 2 ، ك-5 ) وكان أ ⊥ ب، فإن ك = ...", 
-            options: ["1", "2", "-1", "-2"], 
-            correct: 1 
-        },
-        { 
-            q: "م هي نقطة تلاقي متوسطات المثلث أ ب ج، فإن المتجه م أ + م ب + م ج =", 
-            options: ["أ ب", "أ ج", "و (المتجه الصفري)", "2 م أ"], 
-            correct: 2 
-        },
-        { 
-            q: "طول العمود المرسوم من النقطة ( 4 ، -2 ) على المستقيم 3س + 4ص - 25 = 0 هو:", 
-            options: ["3 وحدات", "4 وحدات", "5 وحدات", "7 وحدات"], 
-            correct: 2 
-        },
-        { 
-            q: "قياس الزاوية بين المستقيمين: س - 2 = 0 ، ص + 5 = 0 يساوي:", 
-            options: ["30°", "45°", "60°", "90°"], 
-            correct: 3 
-        },
-        { 
-            q: "المستقيم 3س + 4ص = 12 يصنع مع محوري الإحداثيات مثلثاً مساحته:", 
-            options: ["4 وحدات مربعة", "6 وحدات مربعة", "12 وحدة مربعة", "24 وحدة مربعة"], 
-            correct: 1 
-        },
-        { 
-            q: "النقطة التي تنتمي لمجموعة حل المتباينات: س ≥ 0 ، ص ≥ 0 ، س + ص ≤ 4 هي:", 
-            options: ["( 1 ، 1 )", "( 5 ، 0 )", "( 2 ، 3 )", "( 0 ، 6 )"], 
-            correct: 0 
-        },
-        { 
-            q: "حل المعادلة جتا θ = 1/2 حيث θ زاوية حادة هو:", 
-            options: ["30°", "45°", "60°", "90°"], 
-            correct: 2 
-        },
-        { 
-            q: "إذا كانت جـ منتصف القطعة أ ب ، حيث أ = ( 1 ، 3 ) ، ب = ( 5 ، 1 ) فإن جـ = ...", 
-            options: ["( 2 ، 3 )", "( 3 ، 2 )", "( 6 ، 4 )", "( 4 ، 6 )"], 
-            correct: 1 
-        }
+        { q: "إذا كان ( س ، 6 ) - ( 1 ، ص ) = ( 2 ، 5 ) فإن س + ص = ...", options: ["1", "2", "4", "5"], correct: 2 },
+        { q: "إذا كانت المصفوفة أ = <br> [ 0 &nbsp;&nbsp; 2س-5 ] <br> [ 12 &nbsp;&nbsp; 0 ] <br> شبه متماثلة، فإن س = ...", options: ["2", "4", "-2", "-4"], correct: 1 },
+        { q: "إذا كانت أ ، ب مصفوفتان بحيث أ ب = I (مصفوفة الوحدة)، فإن أ⁻¹ يساوي:", options: ["ب", "أ", "I", "ب⁻¹"], correct: 0 },
+        { q: "المصفوفة <br> [ س+4 &nbsp;&nbsp; 0 ] <br> [ 0 &nbsp;&nbsp; س-4 ] <br> ليس لها معكوس ضربي عندما س تنتمي لـ:", options: ["{4}", "{-4}", "{4, -4}", "{0}"], correct: 2 },
+        { q: "قيمة س التي تحقق: <br> [ 2 &nbsp;&nbsp; س ] = [ 2 &nbsp;&nbsp; 4 ] <br> [ 3 &nbsp;&nbsp; 5 ] &nbsp;&nbsp; [ 3 &nbsp;&nbsp; 5 ]", options: ["2", "3", "4", "5"], correct: 2 },
+        { q: "إذا كان: <br> [ 3 &nbsp; 2 ] [ 2 &nbsp;&nbsp; 1 ] = [ 6 &nbsp; 1 ] <br> [ س &nbsp; 1 ] [ 0 &nbsp; -1 ] &nbsp; [ 4 &nbsp; 1 ] <br> فإن س = ...", options: ["2", "3", "4", "5"], correct: 0 },
+        { q: "جا²(180° - θ) + جا²(270° - θ) = ...", options: ["جا²θ", "جتا²θ", "1", "صفر"], correct: 2 },
+        { q: "قيمة المقدار: قتا θ جا θ + 2 جتا θ قا θ + 3 ظتا θ ظا θ =", options: ["4", "5", "6", "1"], correct: 2 },
+        { q: "إذا كان أ + ب = 90° ، فإن ظا أ ظا ب = ...", options: ["صفر", "1", "-1", "2"], correct: 1 },
+        { q: "قطاع دائري محيطه 44 سم وطول نصف قطر دائرته 14 سم، فإن طول قوسه (ل) =", options: ["8", "14", "16", "32"], correct: 2 },
+        { q: "مساحة المثلث الذي أطوال أضلاعه 6 سم ، 8 سم ، 10 سم تساوي:", options: ["24 سم²", "30 سم²", "48 سم²", "60 سم²"], correct: 0 },
+        { q: "الصورة القطبية للمتجه ن = ( 3 ، 3√3 ) هي:", options: ["( 6 ، 30° )", "( 6 ، 60° )", "( 3 ، 60° )", "( 6 ، 120° )"], correct: 1 },
+        { q: "إذا كان أ = ( ك ، 2 ) ، ب = ( 2 ، ك-5 ) وكان أ ⊥ ب، فإن ك = ...", options: ["1", "2", "-1", "-2"], correct: 1 },
+        { q: "م هي نقطة تلاقي متوسطات المثلث أ ب ج، فإن المتجه م أ + م ب + م ج =", options: ["أ ب", "أ ج", "و (المتجه الصفري)", "2 م أ"], correct: 2 },
+        { q: "طول العمود المرسوم من النقطة ( 4 ، -2 ) على المستقيم 3س + 4ص - 25 = 0 هو:", options: ["3 وحدات", "4 وحدات", "5 وحدات", "7 وحدات"], correct: 2 },
+        { q: "قياس الزاوية بين المستقيمين: س - 2 = 0 ، ص + 5 = 0 يساوي:", options: ["30°", "45°", "60°", "90°"], correct: 3 },
+        { q: "المستقيم 3س + 4ص = 12 يصنع مع محوري الإحداثيات مثلثاً مساحته:", options: ["4 وحدات مربعة", "6 وحدات مربعة", "12 وحدة مربعة", "24 وحدة مربعة"], correct: 1 },
+        { q: "النقطة التي تنتمي لمجموعة حل المتباينات: س ≥ 0 ، ص ≥ 0 ، س + ص ≤ 4 هي:", options: ["( 1 ، 1 )", "( 5 ، 0 )", "( 2 ، 3 )", "( 0 ، 6 )"], correct: 0 },
+        { q: "حل المعادلة جتا θ = 1/2 حيث θ زاوية حادة هو:", options: ["30°", "45°", "60°", "90°"], correct: 2 },
+        { q: "إذا كانت جـ منتصف القطعة أ ب ، حيث أ = ( 1 ، 3 ) ، ب = ( 5 ، 1 ) فإن جـ = ...", options: ["( 2 ، 3 )", "( 3 ، 2 )", "( 6 ، 4 )", "( 4 ، 6 )"], correct: 1 }
     ];
-
-    // لتعديل شكل المصفوفات في العرض، استخدمنا وسم <br> ومسافات &nbsp;
-    // تقدر برضه تستخدم CSS عشان تخلي الـ .q-text تعرض الـ HTML بشكل مظبوط
 
     let currentIdx = 0;
     let userAnswers = new Array(20).fill(null);
-    let studentName = "";
+    let studentData = { name: "", phone: "", group: "" };
+
+    window.onload = () => {
+        const saved = localStorage.getItem('math_exam_done');
+        if (saved) {
+            const data = JSON.parse(saved);
+            document.getElementById('prev-score-hint').innerText = `أهلاً ${data.name}، درجتك السابقة: ${data.score}/20`;
+        }
+    };
 
     function startExam() {
-        studentName = document.getElementById('studentName').value.trim();
-        if (studentName.split(' ').length < 3) {
-            alertModal("خطأ", "يجب إدخال اسمك الرباعي للتسجيل.");
+        const name = document.getElementById('studentName').value.trim();
+        const phone = document.getElementById('studentPhone').value.trim();
+        const group = document.getElementById('studentGroup').value;
+
+        if (name.split(' ').length < 3) {
+            alertModal("خطأ", "يجب إدخال اسمك الرباعي.");
             return;
         }
+        if (!phone || !group) {
+            alertModal("خطأ", "برجاء إكمال كافة البيانات (الموبايل والمجموعة).");
+            return;
+        }
+
+        // منع الدخول لو امتحن قبل كده بنفس الاسم أو المتصفح
+        const saved = localStorage.getItem('math_exam_done');
+        if (saved) {
+            const data = JSON.parse(saved);
+            alertModal("ممنوع", `عذراً يا ${data.name}، لقد أتممت هذا الاختبار مسبقاً بدرجة ${data.score}/20 ولا يمكن إعادته.`);
+            return;
+        }
+
+        studentData = { name, phone, group };
         document.getElementById('login-section').style.display = 'none';
         document.getElementById('quiz-section').style.display = 'block';
         renderQuestion();
@@ -369,11 +328,8 @@
     }
 
     function showConfirm() {
-        if (userAnswers.includes(null)) {
-            alertModal("تنبيه", "هناك أسئلة لم يتم حلها، هل أنت متأكد من التسليم؟", true, submitFinal);
-        } else {
-            alertModal("تأكيد", "هل أنت متأكد من إنهاء الاختبار؟", true, submitFinal);
-        }
+        const unSolved = userAnswers.includes(null);
+        alertModal("تأكيد التسليم", unSolved ? "هناك أسئلة لم يتم حلها، هل تريد التسليم النهائي؟" : "هل أنت متأكد من إنهاء الاختبار؟", true, submitFinal);
     }
 
     function submitFinal() {
@@ -394,21 +350,24 @@
             `;
         });
 
-        window.saveToFirebase(studentName, score);
+        window.saveToFirebase(studentData, score);
         document.getElementById('quiz-section').style.display = 'none';
         document.getElementById('result-section').style.display = 'block';
         document.getElementById('final-score').innerText = `${score} / 20`;
-        document.getElementById('final-msg').innerText = score >= 16 ? "أداء مبهر!" : "جيد، حاول المذاكرة أكثر.";
+        document.getElementById('final-msg').innerText = score >= 16 ? "أداء مبهر يا بطل!" : "محاولة جيدة، ركز في المرة القادمة.";
         closeModal();
     }
 
-    // Modal System
     function alertModal(title, text, isConfirm = false, action = null) {
         document.getElementById('modal-title').innerText = title;
-        document.getElementById('modal-text').innerText = text;
+        document.getElementById('modal-text').innerHTML = text;
         const confirmBtn = document.getElementById('confirm-btn');
-        confirmBtn.style.display = isConfirm ? 'block' : 'none';
-        confirmBtn.onclick = action;
+        const cancelBtn = document.getElementById('cancel-modal-btn');
+        
+        confirmBtn.onclick = action || closeModal;
+        cancelBtn.style.display = isConfirm ? 'block' : 'none';
+        confirmBtn.innerText = isConfirm ? "تأكيد" : "حسناً";
+        
         document.getElementById('custom-modal').style.display = 'flex';
     }
 
