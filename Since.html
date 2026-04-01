@@ -81,7 +81,7 @@
         <p id="resultFeedback" style="font-size: 1.1rem; margin-bottom: 25px; color: var(--muted);"></p>
         <div style="display: flex; gap: 10px; justify-content: center;">
             <button class="btn btn-primary" onclick="toggleReview()" style="max-width: 200px;">مراجعة الإجابات</button>
-            <button class="btn btn-secondary" onclick="location.reload()" style="max-width: 200px;">إعادة الاختبار</button>
+            <button class="btn btn-secondary" onclick="resetQuiz()" style="max-width: 200px;">إعادة الاختبار</button>
         </div>
     </div>
 
@@ -131,33 +131,66 @@ const rawQuestions = [
 let questions = [];
 let currentIdx = 0;
 let userAnswers = Array(15).fill(-1);
-let studentName = "";
+let studentData = { name: "", phone: "", group: "" };
 let timer = 0;
 let timerInt;
 
 async function startQuiz() {
-    const { value: name } = await Swal.fire({
+    // التحقق من وجود نتيجة محفوظة
+    const savedScore = localStorage.getItem('last_quiz_score');
+    if (savedScore) {
+        const data = JSON.parse(savedScore);
+        Swal.fire({
+            title: 'لديك نتيجة سابقة!',
+            html: `أهلاً ${data.name}<br>درجتك الأخيرة هي: <b>${data.score}%</b>`,
+            icon: 'info',
+            confirmButtonText: 'إعادة الاختبار',
+            background: '#111827', color: '#fff'
+        });
+    }
+
+    const { value: formValues } = await Swal.fire({
         title: 'مرحباً بك يا بطل',
-        text: 'ادخل اسمك لبدء التحدي',
-        input: 'text',
+        html:
+            '<input id="swal-input1" class="swal2-input" placeholder="الاسم بالكامل">' +
+            '<input id="swal-input2" class="swal2-input" placeholder="رقم الواتساب">' +
+            '<select id="swal-input3" class="swal2-input">' +
+            '<option value="" disabled selected>اختر مجموعتك</option>' +
+            '<option value="الدراسه الاعظم">الدراسه الاعظم</option>' +
+            '<option value="شباب المستقبل">شباب المستقبل</option>' +
+            '<option value="طلاب اولى ثانوي ازهر و عام">طلاب اولى ثانوي ازهر و عام</option>' +
+            '<option value="اولى ثانوي">اولى ثانوي</option>' +
+            '<option value="الطريق الى الجنه">الطريق الى الجنه</option>' +
+            '</select>',
+        focusConfirm: false,
         confirmButtonText: 'ابدأ الآن 🚀',
         allowOutsideClick: false,
-        background: '#111827', color: '#fff'
+        background: '#111827', color: '#fff',
+        preConfirm: () => {
+            const name = document.getElementById('swal-input1').value;
+            const phone = document.getElementById('swal-input2').value;
+            const group = document.getElementById('swal-input3').value;
+            if (!name || !phone || !group) {
+                Swal.showValidationMessage('الرجاء إكمال جميع البيانات');
+            }
+            return { name, phone, group };
+        }
     });
-    
-    if(!name || name.trim() === "") return location.reload();
-    studentName = name;
-    document.getElementById('studentDisplay').innerText = `المتسابق: ${name}`;
 
-    questions = rawQuestions.sort(() => Math.random() - 0.5).map(q => {
-        const correctText = q.opts[q.ans];
-        const shuffled = [...q.opts].sort(() => Math.random() - 0.5);
-        return { q: q.q, opts: shuffled, ans: shuffled.indexOf(correctText) };
-    });
+    if (formValues) {
+        studentData = formValues;
+        document.getElementById('studentDisplay').innerText = `المتسابق: ${studentData.name} | ${studentData.group}`;
+        
+        questions = rawQuestions.sort(() => Math.random() - 0.5).map(q => {
+            const correctText = q.opts[q.ans];
+            const shuffled = [...q.opts].sort(() => Math.random() - 0.5);
+            return { q: q.q, opts: shuffled, ans: shuffled.indexOf(correctText) };
+        });
 
-    document.getElementById('quizSection').style.display = 'block';
-    startTimer();
-    renderQuestion();
+        document.getElementById('quizSection').style.display = 'block';
+        startTimer();
+        renderQuestion();
+    }
 }
 
 function renderQuestion() {
@@ -217,15 +250,34 @@ async function finishQuiz() {
     questions.forEach((q, i) => { if(userAnswers[i] === q.ans) finalScore++; });
     const finalPct = Math.round((finalScore / questions.length) * 100);
 
+    // حفظ في المتصفح (LocalStorage)
+    localStorage.setItem('last_quiz_score', JSON.stringify({
+        name: studentData.name,
+        score: finalPct,
+        at: Date.now()
+    }));
+
     document.getElementById('quizSection').style.display = 'none';
     document.getElementById('resultsScreen').style.display = 'block';
     document.getElementById('finalScore').innerText = `${finalPct}%`;
     document.getElementById('resultFeedback').innerText = finalPct >= 50 ? "أداء متميز! استمر في التقدم." : "تحتاج إلى مزيد من المذاكرة، حاول مرة أخرى.";
 
-    await db.collection("science_ranks").add({ name: studentName, score: finalPct, time: timer, at: Date.now() });
+    // الحفظ في Firebase مع البيانات الجديدة
+    await db.collection("science_ranks").add({ 
+        name: studentData.name, 
+        phone: studentData.phone,
+        group: studentData.group,
+        score: finalPct, 
+        time: timer, 
+        at: Date.now() 
+    });
     
     generateReview();
     showLeaderboard();
+}
+
+function resetQuiz() {
+    location.reload();
 }
 
 function generateReview() {
@@ -239,7 +291,7 @@ function generateReview() {
         div.innerHTML = `
             <span class="status-badge" style="background:${isCorrect ? '#10b981' : '#ef4444'}">${isCorrect ? 'إجابة صحيحة' : 'إجابة خاطئة'}</span>
             <p style="font-weight:bold; margin-bottom:5px;">س ${i+1}: ${q.q}</p>
-            <p>إجابتك: <span style="color:${isCorrect ? '#10b981' : '#ef4444'}">${q.opts[userAnswers[i]]}</span></p>
+            <p>إجابتك: <span style="color:${isCorrect ? '#10b981' : '#ef4444'}">${userAnswers[i] !== -1 ? q.opts[userAnswers[i]] : 'لم يتم الإجابة'}</span></p>
             ${!isCorrect ? `<p style="color:#10b981">الإجابة الصحيحة: ${q.opts[q.ans]}</p>` : ''}
         `;
         container.appendChild(div);
@@ -262,7 +314,7 @@ async function showLeaderboard() {
     snap.forEach((doc, i) => {
         const d = doc.data();
         listDiv.innerHTML += `<div style="display:flex; justify-content:space-between; padding:12px; border-bottom:1px solid var(--border)">
-            <span>${i+1}. ${d.name}</span>
+            <span>${i+1}. ${d.name} (${d.group})</span>
             <span><b>${d.score}%</b> <small style="color:var(--muted)">(${d.time}ث)</small></span>
         </div>`;
     });
