@@ -22,7 +22,7 @@
       min-height: 100vh;
     }
 
-    .admin-wrapper { max-width: 1100px; margin: 0 auto; padding: 20px; }
+    .admin-wrapper { max-width: 1200px; margin: 0 auto; padding: 20px; }
     
     .tabs-nav { 
       display: flex; gap: 10px; margin-bottom: 25px; overflow-x: auto; padding-bottom: 10px;
@@ -44,18 +44,19 @@
     }
 
     .table-container { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; margin-top: 15px; min-width: 700px; }
-    th { text-align: right; color: var(--p); border-bottom: 2px solid var(--p); padding: 10px; font-size: 0.9rem; }
-    td { padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.85rem; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; min-width: 900px; }
+    th { text-align: right; color: var(--p); border-bottom: 2px solid var(--p); padding: 12px; font-size: 0.9rem; }
+    td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.85rem; }
     tr:hover { background: rgba(255,255,255,0.02); }
-    .badge-cheat { background: var(--red); color: white; padding: 2px 6px; border-radius: 5px; font-size: 10px; margin-right: 5px; }
+    
+    .badge-cheat { background: var(--red); color: white; padding: 2px 6px; border-radius: 5px; font-size: 11px; margin-left: 5px; font-weight: bold; }
 
     input, select, textarea { 
       width: 100%; padding: 12px; margin: 8px 0; background: rgba(0,0,0,0.4); 
       border: 1px solid #444; border-radius: 10px; color: #fff; font-family: 'Cairo';
     }
     .btn { 
-      padding: 10px 20px; border-radius: 10px; border: none; font-weight: 900; 
+      padding: 12px 25px; border-radius: 12px; border: none; font-weight: 900; 
       cursor: pointer; transition: 0.3s; font-family: 'Cairo';
     }
     .btn-p { background: var(--p); color: #000; }
@@ -99,24 +100,31 @@
 
     <div id="exam-tab" class="tab-content">
         <div class="glass-card">
-            <h2>إنشاء امتحان جديد</h2>
-            <input type="text" id="exTitle" placeholder="عنوان الامتحان">
-            <input type="text" id="exDesc" placeholder="وصف الامتحان">
-            <input type="text" id="exUrl" placeholder="رابط الملف (مثلاً: quiz1.html)">
-            <button class="btn btn-p" style="width:100%" onclick="saveExam()">حفظ ونشر الامتحان 🚀</button>
+            <h2>🚀 نشر امتحان جديد</h2>
+            <p style="color:#aaa; font-size:13px;">املأ البيانات التالية ليظهر الامتحان للطلاب فوراً</p>
+            <label>عنوان الامتحان:</label>
+            <input type="text" id="exTitle" placeholder="مثلاً: اختبار شهر مارس - جبر">
+            
+            <label>وصف الامتحان:</label>
+            <textarea id="exDesc" rows="3" placeholder="اكتب وصفاً بسيطاً للطلاب..."></textarea>
+            
+            <label>اسم ملف الامتحان (URL):</label>
+            <input type="text" id="exUrl" placeholder="مثلاً: math_quiz_1.html">
+            
+            <button class="btn btn-p" style="width:100%; margin-top:10px;" onclick="saveExam()">حفظ ونشر الامتحان الآن ⚡</button>
         </div>
     </div>
 
     <div id="results-math" class="tab-content">
         <div class="glass-card">
-            <h2 style="color:var(--p)">🏆 أوائل اختبار الرياضيات</h2>
+            <h2 style="color:var(--p)">📐 نتائج الرياضيات (Realtime)</h2>
             <div class="table-container">
                 <table>
                     <thead>
                         <tr>
                             <th>الاسم</th>
                             <th>المجموعة</th>
-                            <th>الواتساب</th>
+                            <th>الموبايل</th>
                             <th>الدرجة</th>
                             <th>التوقيت</th>
                         </tr>
@@ -129,14 +137,16 @@
 
     <div id="results-science" class="tab-content">
         <div class="glass-card">
-            <h2 style="color:var(--s)">🧪 أوائل اختبار العلوم</h2>
+            <h2 style="color:var(--s)">🧪 نتائج العلوم (Firestore)</h2>
             <div class="table-container">
                 <table>
                     <thead>
                         <tr>
                             <th>الاسم</th>
+                            <th>المجموعة</th>
+                            <th>الموبايل</th>
                             <th>الدرجة</th>
-                            <th>الوقت (ث)</th>
+                            <th>الوقت</th>
                             <th>التاريخ</th>
                         </tr>
                     </thead>
@@ -148,14 +158,14 @@
 
     <div id="manage-tab" class="tab-content">
         <div class="glass-card">
-            <h2>التحكم في الامتحانات الحالية</h2>
+            <h2>⚙️ الامتحانات المنشورة حالياً</h2>
             <div id="manageExamsList"></div>
         </div>
     </div>
 </div>
 
 <script>
-  // --- إعدادات Firebase ---
+  // --- Firebase Config ---
   const firebaseConfig = {
       apiKey: "AIzaSyBMBd9C41EyU7kWi06CVMgXrYFBVAvU1v8",
       authDomain: "shapap-13c58.firebaseapp.com",
@@ -196,95 +206,82 @@
       const title = document.getElementById('exTitle').value;
       const desc = document.getElementById('exDesc').value;
       const url = document.getElementById('exUrl').value;
-      if(!title || !url) return Swal.fire('نقص بيانات', 'املأ الحقول', 'warning');
+      if(!title || !url) return Swal.fire('نقص بيانات', 'املأ الحقول المطلوبة', 'warning');
+      
       await db.collection("exams").add({ title, desc, url, createdAt: Date.now() });
-      Swal.fire('تم النشر', 'الامتحان الآن متاح للطلاب', 'success');
+      Swal.fire('تم النشر', 'الامتحان متاح الآن لجميع الطلاب', 'success');
+      // مسح الحقول بعد النشر
+      document.getElementById('exTitle').value = '';
+      document.getElementById('exDesc').value = '';
+      document.getElementById('exUrl').value = '';
   }
 
   function loadData() {
-      // 1. تحميل نتائج الرياضيات (Realtime DB) + ترتيب الأوائل + كشف التكرار
+      // 1. جلب الرياضيات وكشف المكررين
       rdb.ref('results').on('value', snap => {
-          const mathBody = document.getElementById('mathBody');
-          mathBody.innerHTML = '';
+          const body = document.getElementById('mathBody');
+          body.innerHTML = '';
           let data = [];
           snap.forEach(child => { data.push({id: child.key, ...child.val()}); });
-
-          // ترتيب: الأعلى درجة أولاً
           data.sort((a, b) => b.score - a.score);
 
-          // كشف التكرار بناءً على الاسم
-          const namesCount = data.reduce((acc, curr) => {
-              acc[curr.name] = (acc[curr.name] || 0) + 1;
-              return acc;
-          }, {});
+          const mathNames = data.reduce((acc, curr) => { acc[curr.name] = (acc[curr.name] || 0) + 1; return acc; }, {});
 
           data.forEach(d => {
-              const hasCheated = namesCount[d.name] > 1;
-              mathBody.innerHTML += `
-                  <tr>
-                      <td>${hasCheated ? '<span class="badge-cheat">⚠️ مكرر</span>' : ''}${d.name}</td>
-                      <td>${d.group || 'غير محدد'}</td>
-                      <td>${d.phone || '---'}</td>
-                      <td style="color:var(--a); font-weight:bold;">${d.score} / ${d.total}</td>
-                      <td style="font-size:10px;">${d.timestamp}</td>
-                  </tr>
-              `;
-          });
-      });
-
-      // 2. تحميل نتائج العلوم (Firestore) + ترتيب الأوائل
-      db.collection("science_ranks").orderBy("score", "desc").orderBy("time", "asc").onSnapshot(snap => {
-          const body = document.getElementById('scienceBody');
-          body.innerHTML = '';
-          
-          let entries = [];
-          snap.forEach(doc => entries.push(doc.data()));
-
-          // كشف تكرار الأسماء في العلوم
-          const scNames = entries.reduce((acc, curr) => {
-              acc[curr.name] = (acc[curr.name] || 0) + 1;
-              return acc;
-          }, {});
-
-          entries.forEach(d => {
-              const date = new Date(d.at).toLocaleDateString('ar-EG');
-              const isDuplicated = scNames[d.name] > 1;
+              const isDup = mathNames[d.name] > 1;
               body.innerHTML += `
                   <tr>
-                      <td>${isDuplicated ? '<span class="badge-cheat">⚠️ مكرر</span>' : ''}${d.name}</td>
-                      <td style="color:var(--a)">${d.score}%</td>
-                      <td>${d.time} ثانية</td>
-                      <td>${date}</td>
-                  </tr>
-              `;
+                      <td>${isDup ? '<span class="badge-cheat">⚠️ مكرر</span>' : ''}<b>${d.name}</b></td>
+                      <td>${d.group || '---'}</td>
+                      <td>${d.phone || '---'}</td>
+                      <td style="color:var(--p); font-weight:bold;">${d.score} / ${d.total}</td>
+                      <td style="font-size:11px;">${d.timestamp || '---'}</td>
+                  </tr>`;
           });
       });
 
-      // تحميل قائمة الامتحانات للحذف
-      db.collection("exams").onSnapshot(snap => {
+      // 2. جلب العلوم وكشف المكررين
+      db.collection("science_ranks").orderBy("score", "desc").onSnapshot(snap => {
+          const body = document.getElementById('scienceBody');
+          body.innerHTML = '';
+          let scienceData = [];
+          snap.forEach(doc => { scienceData.push({docId: doc.id, ...doc.data()}); });
+
+          const scNames = scienceData.reduce((acc, curr) => { acc[curr.name] = (acc[curr.name] || 0) + 1; return acc; }, {});
+
+          scienceData.forEach(d => {
+              const isDup = scNames[d.name] > 1;
+              body.innerHTML += `
+                  <tr>
+                      <td>${isDup ? '<span class="badge-cheat">⚠️ مكرر</span>' : ''}<b>${d.name}</b></td>
+                      <td>${d.group || '---'}</td>
+                      <td>${d.phone || '---'}</td>
+                      <td style="color:var(--a); font-weight:bold;">${d.score}%</td>
+                      <td>${d.time || '---'} ث</td>
+                      <td style="font-size:10px;">${d.at ? new Date(d.at).toLocaleDateString('ar-EG') : '---'}</td>
+                  </tr>`;
+          });
+      });
+
+      // جلب قائمة الإدارة
+      db.collection("exams").orderBy("createdAt", "desc").onSnapshot(snap => {
           const list = document.getElementById('manageExamsList');
           list.innerHTML = '';
           snap.forEach(doc => {
               list.innerHTML += `
                   <div style="display:flex; justify-content:space-between; padding:15px; border-bottom:1px solid #333; align-items:center;">
-                      <span>${doc.data().title}</span>
+                      <div>
+                        <b>${doc.data().title}</b>
+                        <div style="font-size:11px; color:#777;">File: ${doc.data().url}</div>
+                      </div>
                       <button class="btn btn-red" onclick="deleteExam('${doc.id}')"><i class="fa fa-trash"></i></button>
-                  </div>
-              `;
+                  </div>`;
           });
       });
   }
 
   async function deleteExam(id) {
-      const res = await Swal.fire({
-          title: 'حذف الامتحان؟',
-          text: "مش هتقدر ترجعه تاني!",
-          icon: 'warning',
-          showCancelButton: true,
-          confirmButtonColor: '#ff4757',
-          confirmButtonText: 'أيوه، احذف'
-      });
-      if(res.isConfirmed) {
+      if(confirm('هل تريد حذف هذا الامتحان نهائياً؟')) {
           await db.collection("exams").doc(id).delete();
       }
   }
