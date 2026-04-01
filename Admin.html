@@ -7,8 +7,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Orbitron:wght@700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
   <style>
     :root {
@@ -20,12 +22,11 @@
       min-height: 100vh;
     }
 
-    .admin-wrapper { max-width: 1000px; margin: 0 auto; padding: 20px; }
+    .admin-wrapper { max-width: 1100px; margin: 0 auto; padding: 20px; }
     
-    /* Tabs Navigation */
     .tabs-nav { 
       display: flex; gap: 10px; margin-bottom: 25px; overflow-x: auto; padding-bottom: 10px;
-      sticky: top; top: 0; z-index: 100; background: var(--bg);
+      position: sticky; top: 0; z-index: 100; background: var(--bg);
     }
     .tab-btn { 
       padding: 12px 20px; background: var(--card); border: 1px solid #333; color: #fff;
@@ -42,18 +43,17 @@
       border-radius: 25px; padding: 25px; margin-bottom: 25px;
     }
 
-    /* Table Style */
-    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-    th { text-align: right; color: var(--p); border-bottom: 2px solid var(--p); padding: 10px; }
-    td { padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .table-container { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; min-width: 700px; }
+    th { text-align: right; color: var(--p); border-bottom: 2px solid var(--p); padding: 10px; font-size: 0.9rem; }
+    td { padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.85rem; }
     tr:hover { background: rgba(255,255,255,0.02); }
+    .badge-cheat { background: var(--red); color: white; padding: 2px 6px; border-radius: 5px; font-size: 10px; margin-right: 5px; }
 
-    /* Forms */
     input, select, textarea { 
       width: 100%; padding: 12px; margin: 8px 0; background: rgba(0,0,0,0.4); 
       border: 1px solid #444; border-radius: 10px; color: #fff; font-family: 'Cairo';
     }
-    .option-row { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
     .btn { 
       padding: 10px 20px; border-radius: 10px; border: none; font-weight: 900; 
       cursor: pointer; transition: 0.3s; font-family: 'Cairo';
@@ -81,7 +81,8 @@
     <div class="tabs-nav">
         <button class="tab-btn active" onclick="showTab('since-tab', this)">📁 ملف Since</button>
         <button class="tab-btn" onclick="showTab('exam-tab', this)">📝 إضافة امتحان</button>
-        <button class="tab-btn" onclick="showTab('results-tab', this)">🏆 نتائج الطلاب</button>
+        <button class="tab-btn" onclick="showTab('results-math', this)">📐 نتائج الرياضيات</button>
+        <button class="tab-btn" onclick="showTab('results-science', this)">🧪 نتائج العلوم</button>
         <button class="tab-btn" onclick="showTab('manage-tab', this)">⚙️ إدارة الامتحانات</button>
     </div>
 
@@ -106,21 +107,42 @@
         </div>
     </div>
 
-    <div id="results-tab" class="tab-content">
+    <div id="results-math" class="tab-content">
         <div class="glass-card">
-            <h2>سجل درجات الطلاب</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>اسم الطالب</th>
-                        <th>الدرجة</th>
-                        <th>الوقت</th>
-                        <th>التاريخ</th>
-                    </tr>
-                </thead>
-                <tbody id="resultsBody">
-                    </tbody>
-            </table>
+            <h2 style="color:var(--p)">🏆 أوائل اختبار الرياضيات</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>الاسم</th>
+                            <th>المجموعة</th>
+                            <th>الواتساب</th>
+                            <th>الدرجة</th>
+                            <th>التوقيت</th>
+                        </tr>
+                    </thead>
+                    <tbody id="mathBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="results-science" class="tab-content">
+        <div class="glass-card">
+            <h2 style="color:var(--s)">🧪 أوائل اختبار العلوم</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>الاسم</th>
+                            <th>الدرجة</th>
+                            <th>الوقت (ث)</th>
+                            <th>التاريخ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scienceBody"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -137,13 +159,16 @@
   const firebaseConfig = {
       apiKey: "AIzaSyBMBd9C41EyU7kWi06CVMgXrYFBVAvU1v8",
       authDomain: "shapap-13c58.firebaseapp.com",
+      databaseURL: "https://shapap-13c58-default-rtdb.firebaseio.com",
       projectId: "shapap-13c58",
       storageBucket: "shapap-13c58.firebasestorage.app",
       messagingSenderId: "818487036065",
       appId: "1:818487036065:web:350734adcc4fcd779c48e0"
   };
+  
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
+  const rdb = firebase.database();
 
   function verifyAdmin() {
       if(document.getElementById('adminKey').value === "1511") {
@@ -161,36 +186,72 @@
       btn.classList.add('active');
   }
 
-  // تحديث ملف Since
   async function updateSince(active) {
       const url = document.getElementById('sinceUrl').value || "Since.html";
       await db.collection("settings").doc("since_file").set({ url, active });
       Swal.fire('تم', 'تم تحديث حالة ملف Since', 'success');
   }
 
-  // حفظ امتحان
   async function saveExam() {
       const title = document.getElementById('exTitle').value;
       const desc = document.getElementById('exDesc').value;
       const url = document.getElementById('exUrl').value;
       if(!title || !url) return Swal.fire('نقص بيانات', 'املأ الحقول', 'warning');
-      
       await db.collection("exams").add({ title, desc, url, createdAt: Date.now() });
       Swal.fire('تم النشر', 'الامتحان الآن متاح للطلاب', 'success');
   }
 
-  // تحميل البيانات (النتائج والامتحانات)
   function loadData() {
-      // تحميل النتائج
-      db.collection("science_ranks").orderBy("at", "desc").onSnapshot(snap => {
-          const body = document.getElementById('resultsBody');
+      // 1. تحميل نتائج الرياضيات (Realtime DB) + ترتيب الأوائل + كشف التكرار
+      rdb.ref('results').on('value', snap => {
+          const mathBody = document.getElementById('mathBody');
+          mathBody.innerHTML = '';
+          let data = [];
+          snap.forEach(child => { data.push({id: child.key, ...child.val()}); });
+
+          // ترتيب: الأعلى درجة أولاً
+          data.sort((a, b) => b.score - a.score);
+
+          // كشف التكرار بناءً على الاسم
+          const namesCount = data.reduce((acc, curr) => {
+              acc[curr.name] = (acc[curr.name] || 0) + 1;
+              return acc;
+          }, {});
+
+          data.forEach(d => {
+              const hasCheated = namesCount[d.name] > 1;
+              mathBody.innerHTML += `
+                  <tr>
+                      <td>${hasCheated ? '<span class="badge-cheat">⚠️ مكرر</span>' : ''}${d.name}</td>
+                      <td>${d.group || 'غير محدد'}</td>
+                      <td>${d.phone || '---'}</td>
+                      <td style="color:var(--a); font-weight:bold;">${d.score} / ${d.total}</td>
+                      <td style="font-size:10px;">${d.timestamp}</td>
+                  </tr>
+              `;
+          });
+      });
+
+      // 2. تحميل نتائج العلوم (Firestore) + ترتيب الأوائل
+      db.collection("science_ranks").orderBy("score", "desc").orderBy("time", "asc").onSnapshot(snap => {
+          const body = document.getElementById('scienceBody');
           body.innerHTML = '';
-          snap.forEach(doc => {
-              const d = doc.data();
+          
+          let entries = [];
+          snap.forEach(doc => entries.push(doc.data()));
+
+          // كشف تكرار الأسماء في العلوم
+          const scNames = entries.reduce((acc, curr) => {
+              acc[curr.name] = (acc[curr.name] || 0) + 1;
+              return acc;
+          }, {});
+
+          entries.forEach(d => {
               const date = new Date(d.at).toLocaleDateString('ar-EG');
+              const isDuplicated = scNames[d.name] > 1;
               body.innerHTML += `
                   <tr>
-                      <td>${d.name}</td>
+                      <td>${isDuplicated ? '<span class="badge-cheat">⚠️ مكرر</span>' : ''}${d.name}</td>
                       <td style="color:var(--a)">${d.score}%</td>
                       <td>${d.time} ثانية</td>
                       <td>${date}</td>
@@ -205,9 +266,9 @@
           list.innerHTML = '';
           snap.forEach(doc => {
               list.innerHTML += `
-                  <div style="display:flex; justify-content:space-between; padding:15px; border-bottom:1px solid #333;">
+                  <div style="display:flex; justify-content:space-between; padding:15px; border-bottom:1px solid #333; align-items:center;">
                       <span>${doc.data().title}</span>
-                      <button class="btn btn-red" onclick="deleteExam('${doc.id}')">حذف</button>
+                      <button class="btn btn-red" onclick="deleteExam('${doc.id}')"><i class="fa fa-trash"></i></button>
                   </div>
               `;
           });
@@ -215,7 +276,15 @@
   }
 
   async function deleteExam(id) {
-      if(confirm('متأكد انك عايز تحذف الامتحان ده؟')) {
+      const res = await Swal.fire({
+          title: 'حذف الامتحان؟',
+          text: "مش هتقدر ترجعه تاني!",
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#ff4757',
+          confirmButtonText: 'أيوه، احذف'
+      });
+      if(res.isConfirmed) {
           await db.collection("exams").doc(id).delete();
       }
   }
