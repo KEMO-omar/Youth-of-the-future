@@ -10,7 +10,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
   <style>
-    /* تحميل خطك المخصص */
     @font-face {
       font-family: 'KareemFont';
       src: url('خط.ttf'); 
@@ -41,14 +40,7 @@
     }
 
     .subtitle { text-align: center; color: #888; margin-bottom: 40px; }
-
-    .grid { 
-      display: grid; 
-      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); 
-      gap: 30px; 
-      max-width: 1400px; 
-      margin: 0 auto; 
-    }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 30px; max-width: 1400px; margin: 0 auto; }
 
     .winner-card { 
       background: var(--glass); 
@@ -65,29 +57,9 @@
       box-shadow: 0 15px 40px rgba(255, 215, 0, 0.15);
     }
     
-    canvas { 
-      width: 100%; 
-      border-radius: 15px; 
-      margin-top: 15px; 
-      cursor: pointer; 
-      box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-    }
-
-    .info-tag {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-
-    .score-badge {
-      background: var(--gold);
-      color: #000;
-      padding: 4px 12px;
-      border-radius: 8px;
-      font-weight: 900;
-      font-size: 14px;
-    }
+    canvas { width: 100%; border-radius: 15px; margin-top: 15px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+    .info-tag { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .score-badge { background: var(--gold); color: #000; padding: 4px 12px; border-radius: 8px; font-weight: 900; font-size: 14px; }
 
     .loading-screen {
       position: fixed; inset: 0; background: #000; z-index: 1000;
@@ -102,7 +74,7 @@
 </div>
 
 <h1 class="main-title">لوحة شرف المتفوقين</h1>
-<p class="subtitle">عرض أعلى نتيجة لكل طالب حصل على +90%</p>
+<p class="subtitle">عرض الأبطال المعتمدين فقط (+90%)</p>
 
 <div class="grid" id="winnersGrid"></div>
 
@@ -122,37 +94,38 @@
   const rdb = firebase.database();
 
   const template = new Image();
-  template.src = 'sh.png'; // اسم الصورة اللي طلبته
+  template.src = 'sh.png';
 
   async function startEngine() {
-      // الانتظار حتى تحميل الصورة والخط
       await Promise.all([
           new Promise(res => template.onload = res),
           document.fonts.load("1em KareemFont")
       ]);
-      
       loadDataWithoutDuplicates();
   }
 
   async function loadDataWithoutDuplicates() {
-      // Map لحفظ "أعلى سكور" فقط لكل اسم
       let uniqueWinners = new Map();
 
       try {
-          // 1. فحص سحابة الرياضيات
+          // 1. فحص الرياضيات مع تجاهل المستبعدين (hidden)
           const mathSnap = await rdb.ref('results').once('value');
           mathSnap.forEach(child => {
               const d = child.val();
+              if (d.hidden === true) return; // الحذف المعنوي: لو hidden بـ true تخطاه
+              
               const p = (d.score / d.total) * 100;
               if (p >= 90) {
                   updateMapIfHigher(uniqueWinners, d.name, p, `${d.score}/${d.total}`, 'رياضيات');
               }
           });
 
-          // 2. فحص سحابة العلوم
+          // 2. فحص العلوم مع تجاهل المستبعدين (hidden)
           const sciSnap = await db.collection("science_ranks").where("score", ">=", 90).get();
           sciSnap.forEach(doc => {
               const d = doc.data();
+              if (d.hidden === true) return; // الحذف المعنوي: تخطاه
+              
               updateMapIfHigher(uniqueWinners, d.name, d.score, d.score + '%', 'علوم');
           });
 
@@ -160,7 +133,7 @@
 
       } catch (e) {
           console.error("Error:", e);
-          alert("حدثت مشكلة أثناء جلب الأبطال.");
+          document.getElementById('loader').innerHTML = "حدث خطأ في الاتصال بالبيانات";
       }
   }
 
@@ -172,9 +145,9 @@
 
   function renderGrid(winners) {
       const grid = document.getElementById('winnersGrid');
+      grid.innerHTML = "";
       document.getElementById('loader').style.display = 'none';
       
-      // ترتيبهم من الأذكى للأذكى (الأعلى سكور فوق)
       winners.sort((a, b) => b.perc - a.perc);
 
       winners.forEach(w => {
@@ -192,7 +165,6 @@
           drawFinalCert(canvas, w.name);
           card.appendChild(canvas);
           
-          // تحميل عند الضغط
           canvas.onclick = () => {
               const link = document.createElement('a');
               link.download = `شهادة_بطل_${w.name}.png`;
@@ -208,19 +180,12 @@
       const ctx = canvas.getContext('2d');
       canvas.width = template.width;
       canvas.height = template.height;
-      
       ctx.drawImage(template, 0, 0);
-      
-      // إعدادات الخط (كريم جالاكسي)
       const size = canvas.width * 0.055; 
       ctx.font = `bold ${size}px 'KareemFont'`;
       ctx.textAlign = 'center';
-      ctx.fillStyle = '#5C3A27'; // اللون البني المتناسق مع sh.png
-      
-      const x = canvas.width / 2;
-      const y = canvas.height * 0.43; // الإحداثيات المظبوطة
-      
-      ctx.fillText(name, x, y);
+      ctx.fillStyle = '#5C3A27'; 
+      ctx.fillText(name, canvas.width / 2, canvas.height * 0.43);
   }
 
   startEngine();
