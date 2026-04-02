@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>لوحة العمالقة | شباب المستقبل 🏆</title>
+  
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+  <style>
+    /* تحميل خطك المخصص */
+    @font-face {
+      font-family: 'KareemFont';
+      src: url('خط.ttf'); 
+    }
+
+    :root { 
+      --bg: #050505; 
+      --gold: #ffd700; 
+      --cyan: #00f2ff;
+      --glass: rgba(255, 255, 255, 0.03);
+    }
+
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      background: var(--bg); 
+      color: #fff; 
+      margin: 0; 
+      padding: 20px; 
+    }
+    
+    .main-title { 
+      font-family: 'KareemFont', sans-serif; 
+      font-size: 3.5rem; 
+      color: var(--gold); 
+      text-align: center; 
+      margin-bottom: 10px;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+    }
+
+    .subtitle { text-align: center; color: #888; margin-bottom: 40px; }
+
+    .grid { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); 
+      gap: 30px; 
+      max-width: 1400px; 
+      margin: 0 auto; 
+    }
+
+    .winner-card { 
+      background: var(--glass); 
+      border-radius: 25px; 
+      border: 1px solid rgba(255, 215, 0, 0.1); 
+      padding: 20px; 
+      transition: 0.4s;
+      position: relative;
+    }
+    
+    .winner-card:hover { 
+      transform: translateY(-10px); 
+      border-color: var(--gold);
+      box-shadow: 0 15px 40px rgba(255, 215, 0, 0.15);
+    }
+    
+    canvas { 
+      width: 100%; 
+      border-radius: 15px; 
+      margin-top: 15px; 
+      cursor: pointer; 
+      box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    }
+
+    .info-tag {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .score-badge {
+      background: var(--gold);
+      color: #000;
+      padding: 4px 12px;
+      border-radius: 8px;
+      font-weight: 900;
+      font-size: 14px;
+    }
+
+    .loading-screen {
+      position: fixed; inset: 0; background: #000; z-index: 1000;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+    }
+  </style>
+</head>
+<body>
+
+<div id="loader" class="loading-screen">
+    <h2 style="color: var(--cyan)">جاري استدعاء قائمة الأبطال...</h2>
+</div>
+
+<h1 class="main-title">لوحة شرف المتفوقين</h1>
+<p class="subtitle">عرض أعلى نتيجة لكل طالب حصل على +90%</p>
+
+<div class="grid" id="winnersGrid"></div>
+
+<script>
+  const firebaseConfig = {
+      apiKey: "AIzaSyBMBd9C41EyU7kWi06CVMgXrYFBVAvU1v8",
+      authDomain: "shapap-13c58.firebaseapp.com",
+      databaseURL: "https://shapap-13c58-default-rtdb.firebaseio.com",
+      projectId: "shapap-13c58",
+      storageBucket: "shapap-13c58.firebasestorage.app",
+      messagingSenderId: "818487036065",
+      appId: "1:818487036065:web:350734adcc4fcd779c48e0"
+  };
+  
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+  const rdb = firebase.database();
+
+  const template = new Image();
+  template.src = 'sh.png'; // اسم الصورة اللي طلبته
+
+  async function startEngine() {
+      // الانتظار حتى تحميل الصورة والخط
+      await Promise.all([
+          new Promise(res => template.onload = res),
+          document.fonts.load("1em KareemFont")
+      ]);
+      
+      loadDataWithoutDuplicates();
+  }
+
+  async function loadDataWithoutDuplicates() {
+      // Map لحفظ "أعلى سكور" فقط لكل اسم
+      let uniqueWinners = new Map();
+
+      try {
+          // 1. فحص سحابة الرياضيات
+          const mathSnap = await rdb.ref('results').once('value');
+          mathSnap.forEach(child => {
+              const d = child.val();
+              const p = (d.score / d.total) * 100;
+              if (p >= 90) {
+                  updateMapIfHigher(uniqueWinners, d.name, p, `${d.score}/${d.total}`, 'رياضيات');
+              }
+          });
+
+          // 2. فحص سحابة العلوم
+          const sciSnap = await db.collection("science_ranks").where("score", ">=", 90).get();
+          sciSnap.forEach(doc => {
+              const d = doc.data();
+              updateMapIfHigher(uniqueWinners, d.name, d.score, d.score + '%', 'علوم');
+          });
+
+          renderGrid(Array.from(uniqueWinners.values()));
+
+      } catch (e) {
+          console.error("Error:", e);
+          alert("حدثت مشكلة أثناء جلب الأبطال.");
+      }
+  }
+
+  function updateMapIfHigher(map, name, perc, display, subject) {
+      if (!map.has(name) || map.get(name).perc < perc) {
+          map.set(name, { name, perc, display, subject });
+      }
+  }
+
+  function renderGrid(winners) {
+      const grid = document.getElementById('winnersGrid');
+      document.getElementById('loader').style.display = 'none';
+      
+      // ترتيبهم من الأذكى للأذكى (الأعلى سكور فوق)
+      winners.sort((a, b) => b.perc - a.perc);
+
+      winners.forEach(w => {
+          const card = document.createElement('div');
+          card.className = 'winner-card';
+          card.innerHTML = `
+            <div class="info-tag">
+                <span style="color:var(--cyan); font-weight:bold;">${w.subject}</span>
+                <span class="score-badge">${w.display}</span>
+            </div>
+            <div style="font-weight:bold; margin-bottom:5px;">${w.name}</div>
+          `;
+          
+          const canvas = document.createElement('canvas');
+          drawFinalCert(canvas, w.name);
+          card.appendChild(canvas);
+          
+          // تحميل عند الضغط
+          canvas.onclick = () => {
+              const link = document.createElement('a');
+              link.download = `شهادة_بطل_${w.name}.png`;
+              link.href = canvas.toDataURL();
+              link.click();
+          };
+
+          grid.appendChild(card);
+      });
+  }
+
+  function drawFinalCert(canvas, name) {
+      const ctx = canvas.getContext('2d');
+      canvas.width = template.width;
+      canvas.height = template.height;
+      
+      ctx.drawImage(template, 0, 0);
+      
+      // إعدادات الخط (كريم جالاكسي)
+      const size = canvas.width * 0.055; 
+      ctx.font = `bold ${size}px 'KareemFont'`;
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#5C3A27'; // اللون البني المتناسق مع sh.png
+      
+      const x = canvas.width / 2;
+      const y = canvas.height * 0.43; // الإحداثيات المظبوطة
+      
+      ctx.fillText(name, x, y);
+  }
+
+  startEngine();
+</script>
+</body>
+</html>
