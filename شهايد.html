@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>مصمم الشهادات الاحترافي | كيمو 🛠️</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Cairo', sans-serif; background: #0b0b0b; color: #fff; display: flex; gap: 20px; padding: 20px; margin: 0; height: 100vh; box-sizing: border-box; }
+        .controls { width: 350px; background: #151515; padding: 20px; border-radius: 15px; border: 1px solid #333; overflow-y: auto; }
+        .preview-area { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #000; border-radius: 15px; border: 1px dashed #444; position: relative; overflow: hidden; }
+        
+        h2 { color: #00f2ff; font-size: 1.2rem; margin-top: 0; }
+        label { display: block; margin-top: 15px; font-size: 0.9rem; color: #aaa; }
+        input, select { width: 100%; padding: 10px; margin-top: 5px; background: #222; border: 1px solid #444; color: #fff; border-radius: 8px; box-sizing: border-box; }
+        
+        .btn-download { background: #00f2ff; color: #000; border: none; width: 100%; padding: 15px; margin-top: 20px; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .btn-download:hover { background: #00d4e0; }
+
+        canvas { max-width: 100%; max-height: 80vh; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .hint { font-size: 0.8rem; color: #666; margin-top: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="controls">
+    <h2>إعدادات الشهادة ⚙️</h2>
+    
+    <label>1. ارفع صورة الشهادة (Background):</label>
+    <input type="file" id="bgInput" accept="image/*">
+
+    <label>2. ارفع ملف الخط (TTF/OTF):</label>
+    <input type="file" id="fontInput" accept=".ttf,.otf">
+
+    <label>3. اسم الطالب:</label>
+    <input type="text" id="studentName" placeholder="اكتب الاسم هنا..." value="كريم عمر">
+
+    <hr style="border:0; border-top:1px solid #333; margin:20px 0;">
+
+    <label>تحريك الاسم عمودياً (Y):</label>
+    <input type="range" id="posY" min="0" max="100" value="43">
+    <div class="hint">حرك السلايدر لرفع أو تنزيل الاسم</div>
+
+    <label>حجم الخط:</label>
+    <input type="range" id="fontSize" min="10" max="200" value="60">
+
+    <label>لون الخط:</label>
+    <input type="color" id="fontColor" value="#5C3A27">
+
+    <button class="btn-download" id="downloadBtn">تحميل الشهادة الآن ✨</button>
+</div>
+
+<div class="preview-area" id="previewArea">
+    <div id="status" style="color: #666; margin-bottom: 10px;">ارفع صورة للبدء...</div>
+    <canvas id="certCanvas"></canvas>
+</div>
+
+<script>
+    const canvas = document.getElementById('certCanvas');
+    const ctx = canvas.getContext('2d');
+    const bgInput = document.getElementById('bgInput');
+    const fontInput = document.getElementById('fontInput');
+    const studentName = document.getElementById('studentName');
+    const posY = document.getElementById('posY');
+    const fontSize = document.getElementById('fontSize');
+    const fontColor = document.getElementById('fontColor');
+    const downloadBtn = document.getElementById('downloadBtn');
+
+    let bgImg = new Image();
+    let customFont = new FontFace('CustomFont', '');
+
+    // 1. معالجة رفع الصورة
+    bgInput.onchange = (e) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            bgImg.src = event.target.result;
+            bgImg.onload = () => {
+                canvas.width = bgImg.width;
+                canvas.height = bgImg.height;
+                document.getElementById('status').innerText = "تم تحميل الخلفية ✅";
+                updatePreview();
+            };
+        };
+        reader.readAsDataURL(e.target.files[0]);
+    };
+
+    // 2. معالجة رفع الخط
+    fontInput.onchange = (e) => {
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            customFont = new FontFace('CustomFont', event.target.result);
+            await customFont.load();
+            document.fonts.add(customFont);
+            document.getElementById('status').innerText = "تم تحميل الخط المخصص ✅";
+            updatePreview();
+        };
+        reader.readAsArrayBuffer(e.target.files[0]);
+    };
+
+    // 3. تحديث المعاينة عند أي تغيير
+    [studentName, posY, fontSize, fontColor].forEach(el => {
+        el.oninput = updatePreview;
+    });
+
+    function updatePreview() {
+        if (!bgImg.src) return;
+
+        // رسم الخلفية
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(bgImg, 0, 0);
+
+        // إعدادات النص
+        const size = (canvas.width * (fontSize.value / 1000)); 
+        ctx.font = `bold ${size}px 'CustomFont', 'Cairo', sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillStyle = fontColor.value;
+
+        // رسم الاسم
+        const x = canvas.width / 2;
+        const y = canvas.height * (posY.value / 100);
+        ctx.fillText(studentName.value, x, y);
+    }
+
+    // 4. التحميل
+    downloadBtn.onclick = () => {
+        if (!bgImg.src) return alert("ارفع صورة أولاً!");
+        const link = document.createElement('a');
+        link.download = `شهادة_${studentName.value}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    };
+</script>
+
+</body>
+</html>
