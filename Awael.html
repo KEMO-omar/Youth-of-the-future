@@ -10,118 +10,42 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
   <style>
-    @font-face {
-      font-family: 'KareemFont';
-      src: url('خط.ttf'); 
-    }
-
-    :root { 
-      --bg: #050505; 
-      --gold: #ffd700; 
-      --cyan: #00f2ff;
-      --glass: rgba(255, 255, 255, 0.03);
-    }
-
-    body { 
-      font-family: 'Segoe UI', Tahoma, sans-serif; 
-      background: var(--bg); 
-      color: #fff; 
-      margin: 0; 
-      padding: 20px; 
-      overflow-x: hidden;
-    }
+    @font-face { font-family: 'KareemFont'; src: url('خط.ttf'); }
+    :root { --bg: #050505; --gold: #ffd700; --cyan: #00f2ff; --glass: rgba(255, 255, 255, 0.03); }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: #fff; margin: 0; padding: 20px; }
     
-    .main-title { 
-      font-family: 'KareemFont', sans-serif; 
-      font-size: clamp(2rem, 8vw, 3.5rem); 
-      color: var(--gold); 
-      text-align: center; 
-      margin-bottom: 10px;
-      text-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
-    }
-
-    .subtitle { text-align: center; color: #888; margin-bottom: 40px; font-weight: bold; }
-    
-    .grid { 
-      display: grid; 
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
-      gap: 25px; 
-      max-width: 1400px; 
-      margin: 0 auto; 
-    }
+    .main-title { font-family: 'KareemFont', sans-serif; font-size: clamp(2rem, 8vw, 3.5rem); color: var(--gold); text-align: center; margin-bottom: 30px; text-shadow: 0 0 20px rgba(255, 215, 0, 0.4); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px; max-width: 1400px; margin: 0 auto; }
 
     .winner-card { 
-      background: var(--glass); 
-      border-radius: 25px; 
-      border: 1px solid rgba(255, 255, 255, 0.05); 
-      padding: 20px; 
-      transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      position: relative;
-      backdrop-filter: blur(10px);
+      background: var(--glass); border-radius: 25px; border: 1px solid rgba(255, 255, 255, 0.05); 
+      padding: 20px; transition: 0.4s; position: relative; backdrop-filter: blur(10px);
     }
+    .winner-card:hover { transform: translateY(-10px); border-color: var(--cyan); box-shadow: 0 15px 40px rgba(0, 242, 255, 0.1); }
     
-    .winner-card:hover { 
-      transform: translateY(-10px); 
-      border-color: var(--cyan);
-      box-shadow: 0 15px 40px rgba(0, 242, 255, 0.1);
-    }
-    
-    canvas { 
-      width: 100%; 
-      border-radius: 15px; 
-      margin-top: 15px; 
-      cursor: pointer; 
-      box-shadow: 0 10px 20px rgba(0,0,0,0.6); 
-    }
+    canvas { width: 100%; border-radius: 15px; margin-top: 15px; cursor: pointer; background: #111; }
+    .info-tag { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .subject-badge { background: rgba(0, 242, 255, 0.1); color: var(--cyan); padding: 5px 15px; border-radius: 50px; font-size: 0.8rem; border: 1px solid var(--cyan); }
+    .score-badge { background: var(--gold); color: #000; padding: 5px 15px; border-radius: 10px; font-weight: 900; }
 
-    .info-tag { 
-      display: flex; 
-      justify-content: space-between; 
-      align-items: center; 
-      margin-bottom: 15px; 
-    }
-
-    .subject-badge {
-      background: rgba(0, 242, 255, 0.1);
-      color: var(--cyan);
-      padding: 5px 15px;
-      border-radius: 50px;
-      font-size: 0.8rem;
-      border: 1px solid var(--cyan);
-    }
-
-    .score-badge { 
-      background: var(--gold); 
-      color: #000; 
-      padding: 5px 15px; 
-      border-radius: 10px; 
-      font-weight: 900; 
-    }
-
-    .loading-screen {
-      position: fixed; inset: 0; background: #000; z-index: 2000;
-      display: flex; flex-direction: column; justify-content: center; align-items: center;
-    }
-
-    .download-hint {
-      font-size: 0.7rem; color: #666; text-align: center; margin-top: 10px;
-    }
+    .loading-screen { position: fixed; inset: 0; background: #000; z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+    .loader-spin { width: 50px; height: 50px; border: 5px solid #333; border-top-color: var(--cyan); border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
 
 <div id="loader" class="loading-screen">
-    <div style="width: 50px; height: 50px; border: 5px solid #333; border-top-color: var(--cyan); border-radius: 50%; animation: spin 1s linear infinite;"></div>
-    <h2 style="color: var(--cyan); margin-top: 20px;">جاري تجهيز لوحة الشرف...</h2>
+    <div class="loader-spin"></div>
+    <h2 style="color: var(--cyan); margin-top: 20px;">جاري استدعاء قائمة الأبطال...</h2>
 </div>
 
 <h1 class="main-title">لوحة شرف المتفوقين</h1>
-<p id="currentSubjectDisplay" class="subtitle">تحميل بيانات المادة...</p>
 
 <div class="grid" id="winnersGrid"></div>
 
 <script>
-  // --- إعدادات Firebase ---
+  // --- Firebase Configuration ---
   const firebaseConfig = {
       apiKey: "AIzaSyBMBd9C41EyU7kWi06CVMgXrYFBVAvU1v8",
       authDomain: "shapap-13c58.firebaseapp.com",
@@ -136,75 +60,52 @@
   const db = firebase.firestore();
   const rdb = firebase.database();
 
-  const template = new Image();
-  let certSettings = {}; // المتغير اللي هيشيل الإعدادات من الأدمن
+  let subjectConfigs = {}; // مخزن إعدادات كل مادة
 
   async function startEngine() {
       try {
-          // 1. جلب إعدادات الشهادة من الأدمن أولاً
-          const settingsDoc = await db.collection("settings").doc("current_cert").get();
-          if (settingsDoc.exists) {
-              certSettings = settingsDoc.data();
-              template.src = certSettings.img || 'sh1.png';
-              document.getElementById('currentSubjectDisplay').innerText = `أبطال مادة: ${certSettings.subject || 'عام'}`;
-          } else {
-              // قيم افتراضية لو ملقاش إعدادات
-              template.src = 'sh1.png';
-              certSettings = { color: '#003366', yPos: 0.52, subject: 'عام' };
-          }
+          // 1. تحميل الخط أولاً
+          await document.fonts.load("1em KareemFont");
 
-          // 2. الانتظار لتحميل الصورة والخط
-          await Promise.all([
-              new Promise(res => template.onload = res),
-              document.fonts.load("1em KareemFont")
-          ]);
-
-          loadData();
-      } catch (e) {
-          console.error("Initialization Error:", e);
-      }
-  }
-
-  async function loadData() {
-      let uniqueWinners = new Map();
-
-      try {
-          // جلب بيانات الرياضيات (RTDB)
-          const mathSnap = await rdb.ref('results').once('value');
-          mathSnap.forEach(child => {
-              const d = child.val();
-              if (d.hidden === true) return;
-              const p = (d.score / d.total) * 100;
-              if (p >= 90) updateMap(uniqueWinners, d.name, p, `${d.score}/${d.total}`, 'الرياضيات');
+          // 2. جلب كل إعدادات المواد من Firestore مرة واحدة
+          const settingsSnap = await db.collection("subject_certs").get();
+          settingsSnap.forEach(doc => {
+              subjectConfigs[doc.id] = doc.data();
           });
 
-          // جلب بيانات العلوم (Firestore)
-          const sciSnap = await db.collection("science_ranks").where("score", ">=", 80).get();
-          sciSnap.forEach(doc => {
-              const d = doc.data();
-              if (d.hidden === true) return;
-              updateMap(uniqueWinners, d.name, d.score, d.score + '%', 'العلوم المتكاملة');
-          });
-
-          renderGrid(Array.from(uniqueWinners.values()));
-
-      } catch (e) {
-          console.error("Data Load Error:", e);
-      }
+          loadAllData();
+      } catch (e) { console.error(e); }
   }
 
-  function updateMap(map, name, perc, display, subject) {
-      if (!map.has(name) || map.get(name).perc < perc) {
-          map.set(name, { name, perc, display, subject });
-      }
+  async function loadAllData() {
+      let winners = [];
+
+      // جلب بيانات الرياضيات (RTDB) - نفترض الكي هو 'math'
+      const mathSnap = await rdb.ref('results').once('value');
+      mathSnap.forEach(child => {
+          const d = child.val();
+          if (d.hidden === true) return;
+          const p = (d.score / d.total) * 100;
+          if (p >= 90) winners.push({ name: d.name, perc: p, display: `${d.score}/${d.total}`, subject: 'الرياضيات', key: 'math' });
+      });
+
+      // جلب بيانات العلوم (Firestore) - نفترض الكي هو 'science'
+      const sciSnap = await db.collection("science_ranks").where("score", ">=", 90).get();
+      sciSnap.forEach(doc => {
+          const d = doc.data();
+          if (d.hidden === true) return;
+          winners.push({ name: d.name, perc: d.score, display: d.score + '%', subject: 'العلوم المتكاملة', key: 'science' });
+      });
+
+      // رتب الأوائل حسب النسبة
+      winners.sort((a, b) => b.perc - a.perc);
+      renderGrid(winners);
   }
 
   function renderGrid(winners) {
       const grid = document.getElementById('winnersGrid');
       grid.innerHTML = "";
       document.getElementById('loader').style.display = 'none';
-      
-      winners.sort((a, b) => b.perc - a.perc);
 
       winners.forEach(w => {
           const card = document.createElement('div');
@@ -214,18 +115,18 @@
                 <span class="subject-badge">${w.subject}</span>
                 <span class="score-badge">${w.display}</span>
             </div>
-            <div style="font-weight:900; font-size: 1.2rem; margin-bottom:5px; text-align:center;">${w.name}</div>
+            <div style="font-weight:900; text-align:center;">${w.name}</div>
           `;
           
           const canvas = document.createElement('canvas');
-          drawFinalCert(canvas, w.name);
           card.appendChild(canvas);
           
-          card.innerHTML += `<p class="download-hint">اضغط على الشهادة للتحميل ✨</p>`;
-
+          // رسم الشهادة بناءً على إعدادات المادة الخاصة بها
+          drawCertForSubject(canvas, w.name, w.key);
+          
           canvas.onclick = () => {
               const link = document.createElement('a');
-              link.download = `بطل_مستقبل_${w.name}.png`;
+              link.download = `شهادة_${w.subject}_${w.name}.png`;
               link.href = canvas.toDataURL();
               link.click();
           };
@@ -234,22 +135,29 @@
       });
   }
 
-  function drawFinalCert(canvas, name) {
+  function drawCertForSubject(canvas, name, subjectKey) {
+      const config = subjectConfigs[subjectKey];
+      if (!config) return; // لو مفيش إعدادات للمادة دي متجرسش
+
       const ctx = canvas.getContext('2d');
-      canvas.width = template.width;
-      canvas.height = template.height;
-      ctx.drawImage(template, 0, 0);
+      const img = new Image();
+      img.src = config.img;
 
-      const size = canvas.width * 0.06; 
-      ctx.font = `bold ${size}px 'KareemFont'`;
-      ctx.textAlign = 'center';
-      
-      // استخدام اللون والمكان المرسل من الأدمن
-      ctx.fillStyle = certSettings.color || '#003366'; 
-      ctx.fillText(name, canvas.width / 2, canvas.height * (certSettings.yPos || 0.52));
+      img.onload = () => {
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx.drawImage(img, 0, 0);
+
+          const fSize = config.fontSize || 0.06;
+          ctx.font = `bold ${canvas.width * fSize}px 'KareemFont'`;
+          ctx.fillStyle = config.color || '#000';
+          ctx.textAlign = 'center';
+          
+          const x = config.xPos || 0.5;
+          const y = config.yPos || 0.5;
+          ctx.fillText(name, canvas.width * x, canvas.height * y);
+      };
   }
-
-  @keyframes spin { 100% { transform: rotate(360deg); } }
 
   startEngine();
 </script>
