@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة التميز | اختبار الفلسفة والمنطق 🧠</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <style>
+        :root { --p: #bc13fe; --s: #ff00bd; --bg: #050505; --card: #121212; --border: #222; }
+        body { font-family: 'Tajawal', sans-serif; background: var(--bg); color: #fff; margin: 0; padding: 10px; display: flex; justify-content: center; }
+        .container { width: 100%; max-width: 800px; margin-top: 20px; }
+
+        /* شاشة البداية */
+        .glass-card { background: var(--card); border-radius: 20px; padding: 30px; border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h1 { color: var(--p); text-align: center; font-weight: 900; margin-bottom: 30px; }
+        .input-group { margin-bottom: 15px; text-align: right; }
+        label { display: block; margin-bottom: 8px; color: var(--p); font-size: 0.9rem; }
+        input, select { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #333; background: #080808; color: #fff; font-family: inherit; box-sizing: border-box; }
+        input:focus { border-color: var(--p); outline: none; }
+
+        /* منطقة الأسئلة */
+        .quiz-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: #1a1a1a; padding: 15px; border-radius: 15px; }
+        .q-nav { display: grid; grid-template-columns: repeat(10, 1fr); gap: 5px; margin-bottom: 20px; }
+        .q-num { background: #222; border: 1px solid #333; padding: 8px; text-align: center; border-radius: 8px; cursor: pointer; font-size: 0.8rem; }
+        .q-num.active { border-color: var(--p); background: rgba(188, 19, 254, 0.2); }
+        .q-num.answered { background: var(--p); color: #000; font-weight: bold; }
+
+        .question-box { min-height: 200px; }
+        .option { background: #1a1a1a; padding: 16px; border-radius: 12px; margin-bottom: 10px; cursor: pointer; border: 1px solid #333; transition: 0.2s; display: flex; align-items: center; }
+        .option:hover { border-color: var(--p); }
+        .option.selected { background: var(--p); color: #000; font-weight: 900; border-color: #fff; }
+
+        .nav-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .btn { flex: 1; padding: 15px; border-radius: 12px; border: none; font-weight: 900; cursor: pointer; transition: 0.3s; font-family: inherit; }
+        .btn-next { background: var(--p); color: #fff; }
+        .btn-prev { background: #333; color: #fff; }
+        .btn-finish { background: #27ae60; color: #fff; }
+
+        /* مراجعة الإجابات */
+        .review-item { background: #1a1a1a; padding: 15px; border-radius: 12px; margin-bottom: 10px; border-right: 5px solid #333; text-align: right; }
+        .correct { border-right-color: #27ae60 !important; }
+        .wrong { border-right-color: #e74c3c !important; }
+        .correct-ans { color: #27ae60; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="reg-screen" class="glass-card">
+        <h1>🎓 منصة الاختبارات الذكية</h1>
+        <div class="input-group">
+            <label>الاسم رباعي:</label>
+            <input type="text" id="fullName" placeholder="أدخل اسمك بالكامل...">
+        </div>
+        <div class="input-group">
+            <label>رقم الواتساب:</label>
+            <input type="tel" id="whatsapp" placeholder="01xxxxxxxxx">
+        </div>
+        <div class="input-group">
+            <label>المجتمع / المجموعة:</label>
+            <select id="communitySelect">
+                <option value="">-- اختر مجتمعك --</option>
+                <option value="اولى ثانوي">اولى ثانوي</option>
+                <option value="الطريق الى نجاح">الطريق الى نجاح</option>
+                <option value="شباب المستقبل">شباب المستقبل</option>
+                <option value="الدراسه الاعظم">الدراسه الاعظم</option>
+                <option value="اولى ثانوي ازهر وعام">اولى ثانوي ازهر وعام</option>
+            </select>
+        </div>
+        <button class="btn btn-next" onclick="startApp()" style="width:100%; margin-top:10px;">دخول الامتحان 🚀</button>
+    </div>
+
+    <div id="quiz-screen" style="display: none;">
+        <div class="quiz-header">
+            <div id="timer">سؤال: <span id="currentNum">1</span> / 20</div>
+            <div style="font-weight: 900; color: var(--p);">اختبار الفلسفة والمنطق</div>
+        </div>
+        
+        <div class="q-nav" id="qNav"></div>
+
+        <div class="glass-card">
+            <div id="question-area" class="question-box"></div>
+            <div class="nav-btns">
+                <button class="btn btn-prev" onclick="prevQ()">السابق</button>
+                <button class="btn btn-next" id="nextBtn" onclick="nextQ()">التالي</button>
+                <button class="btn btn-finish" id="finishBtn" style="display:none;" onclick="confirmFinish()">إنهاء وإرسال ✅</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="result-screen" style="display: none;" class="glass-card">
+        <h2 style="text-align:center;">انتهى الاختبار ✨</h2>
+        <div style="font-size: 4rem; text-align:center; font-weight:900; color:var(--p);" id="finalScore">0/20</div>
+        <div id="review-area"></div>
+        <button class="btn btn-next" onclick="location.reload()" style="width:100%; margin-top:20px;">خروج</button>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyBMBd9C41EyU7kWi06CVMgXrYFBVAvU1v8",
+        authDomain: "shapap-13c58.firebaseapp.com",
+        projectId: "shapap-13c58",
+        storageBucket: "shapap-13c58.firebasestorage.app",
+        messagingSenderId: "818487036065",
+        appId: "1:818487036065:web:350734adcc4fcd779c48e0"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const questions = [
+        // فلسفة
+        { q: "دراسة تهتم بتأسيس رؤية جديدة لمسئولية الإنسان عن مستقبل الحياة على هذا الكوكب. يعد ذلك تطبيقاً لمفهوم الفلسفة...", options: ["النفعية", "البيئية", "الطاوية", "التطبيقية"], a: 1 },
+        { q: "هي ذلك الرصيد من الموارد المادية والاجتماعية المتاحة في وقت ما وفي مكان ما بغية إشباع حاجات الإنسان وآماله وتطلعاته. تمثل العبارة مفهوم...", options: ["البيئة الاجتماعية", "البيئة اصطلاحياً", "فلسفة البيئة", "البيئة السياسية"], a: 1 },
+        { q: "يقول الشاعر محمد إقبال: عبدوا الكواكب والنجوم جهالة، لم يبلغوا من هديها أنواراً. يشير إلى مرحلة...", options: ["التدمير والتخريب", "الوعي والالتزام", "التوضيح والشرح", "الخضوع والخنوع"], a: 3 },
+        { q: "يقول الزغبي: لقد أنفق فلاسفة الأخلاق بداية من أفلاطون إلى راؤول جهداً كبيراً لجعل الكائنات البشرية ذات خصوصية وتميز.. يعد موقف فلاسفة الأخلاق مثالاً على مرحلة...", options: ["التفسير والتوظيف", "القهر والاستبداد", "الاحترام والصون", "الاستغلال والسيطرة"], a: 0 },
+        { q: "من أقوال وليم شكسبير: الذي لا تستطيع تجنبه عليك بمعانقته. تجسد هذه المقولة موقف الإنسان في مرحلة...", options: ["التقديس والتأليه", "التفسير والتوظيف", "الاحترام والصون", "الاستغلال والسيطرة"], a: 0 },
+        { q: "يعد انتشار النفايات والغازات والمبيدات الغريبة على مكونات الطبيعة، والعجز عن استيعابها في الدورات الطبيعية مثالاً على مرحلة...", options: ["التفسير والتوظيف", "القهر والاستبداد", "الاحترام والصون", "الاستغلال والسيطرة"], a: 1 },
+        { q: "كل الأشياء في النطاق الحيوي لها الحق المتساوي في العيش والازدهار وبلوغ أشكالها الفردية الخاصة من التفتح. يعبر ذلك عن مرحلة في...", options: ["العصر الراهن", "العصر اليوناني", "العصر الحديث", "الإنسان البدائي"], a: 0 },
+        { q: "الطبيعة تشكل رحم الإنسان ومصدر حياته بل مآله النهائي وتعامله معها هو المعيار الحقيقي للرقي الحضاري والأخلاقي. تجسد المقولة مرحلة...", options: ["التفسير والتوظيف", "القهر والاستبداد", "الاحترام والصون", "الاستغلال والسيطرة"], a: 2 },
+        { q: "كانت الديانة السائدة لدى الفرس تأمر بعبادة العناصر الأربعة النار والهواء والماء والتراب. يجسد ذلك مرحلة...", options: ["الإنسان البدائي", "الحضارة اليونانية", "الحضارة المعاصرة", "العصر الحديث"], a: 0 },
+        { q: "يقول سوفوكليس: أشد الأسى أننا أدركنا أننا السبب الوحيد في كل المحن التي تواجهنا. يجسد القول مرحلة...", options: ["الإنسان البدائي", "الحضارة اليونانية", "العصر الحالي", "الحضارة المعاصرة"], a: 3 },
+        // منطق
+        { q: "الكلمة اليونانية 'لوجوس' (Logos) تعني...", options: ["الشعور", "العقل", "الخيال", "الحس"], a: 1 },
+        { q: "يعد أول من وضع تعريفاً جامعاً لعلم المنطق واعتبره 'آلة الفكر' هو الفيلسوف...", options: ["أفلاطون", "أرسطو", "سقراط", "الفارابي"], a: 1 },
+        { q: "المنطق في حياتنا اليومية يساعدنا في الوصول للنتائج الصحيحة وتجنب الخطأ. العبارة تمثل...", options: ["أهمية المنطق", "تعريف المنطق لغوياً", "عيوب المنطق", "نشأة المنطق"], a: 0 },
+        { q: "يرى 'الغزالي' أن المنطق آلة تعصم الذهن من الخطأ. هذا يؤكد أن المنطق...", options: ["علم خاص", "مدخل لكل العلوم", "بديل للفلسفة", "علم تجريبي"], a: 1 },
+        { q: "عملية عقلية ننتقل فيها من مقدمات معلومة إلى نتائج مجهولة تسمى...", options: ["التعريف", "الاستدلال", "التخمين", "الوصف"], a: 1 },
+        { q: "من فوائد المنطق للباحث أنه يساعده في التمييز بين الأدلة السليمة والواهية. الواهية تعني...", options: ["القوية", "الخادعة", "الواضحة", "اليقينية"], a: 1 },
+        { q: "العلاقة بين المنطق واللغة علاقة وثيقة لأن اللغة هي...", options: ["بديل للفكر", "ثوب الفكر (الفكر الملفوظ)", "منفصلة عن العقل", "مجرد أصوات"], a: 1 },
+        { q: "المنطق يحرر الفرد من تأثير العاطفة والشائعات. هذه الفائدة تدل على...", options: ["الدقة اللغوية", "الروح النقدية", "تنمية الفكر", "اليقين"], a: 1 },
+        { q: "كل العلوم التي يدرسها الإنسان تسمى 'فكر'، والمنطق هو العلم الذي يدرس قواعد هذا الفكر. القائل هو...", options: ["ابن سينا", "الفارابي", "أرسطو", "أفلاطون"], a: 2 },
+        { q: "عندما نحكم بالمنطق على صحة كلام ما، فنحن نبحث عن الأدلة والقرائن الكافية. هذا يمثل...", options: ["الاستدلال الصوري", "التفكير الناقد", "التعصب", "الخيال"], a: 1 }
+    ];
+
+    let currentIdx = 0;
+    let userAnswers = Array(questions.length).fill(null);
+    let studentData = {};
+
+    window.startApp = () => {
+        const name = document.getElementById('fullName').value;
+        const phone = document.getElementById('whatsapp').value;
+        const comm = document.getElementById('communitySelect').value;
+
+        if (name.length < 8 || phone.length < 11 || !comm) {
+            Swal.fire({ icon: 'error', title: 'بيانات ناقصة', text: 'يرجى كتابة الاسم رباعي ورقم الواتساب واختيار المجتمع' });
+            return;
+        }
+        studentData = { name, phone, comm };
+        document.getElementById('reg-screen').style.display = 'none';
+        document.getElementById('quiz-screen').style.display = 'block';
+        initNav();
+        renderQuestion();
+    };
+
+    function initNav() {
+        const nav = document.getElementById('qNav');
+        nav.innerHTML = questions.map((_, i) => `<div class="q-num" id="nav-${i}" onclick="jumpTo(${i})">${i+1}</div>`).join('');
+    }
+
+    function renderQuestion() {
+        const q = questions[currentIdx];
+        document.getElementById('currentNum').innerText = currentIdx + 1;
+        document.querySelectorAll('.q-num').forEach(n => n.classList.remove('active'));
+        document.getElementById(`nav-${currentIdx}`).classList.add('active');
+
+        let html = `<h3>${q.q}</h3>`;
+        q.options.forEach((opt, i) => {
+            const isSelected = userAnswers[currentIdx] === i ? 'selected' : '';
+            html += `<div class="option ${isSelected}" onclick="pick(${i})">${opt}</div>`;
+        });
+        document.getElementById('question-area').innerHTML = html;
+
+        document.getElementById('nextBtn').style.display = currentIdx === questions.length - 1 ? 'none' : 'block';
+        document.getElementById('finishBtn').style.display = currentIdx === questions.length - 1 ? 'block' : 'none';
+    }
+
+    window.pick = (idx) => {
+        userAnswers[currentIdx] = idx;
+        document.getElementById(`nav-${currentIdx}`).classList.add('answered');
+        renderQuestion();
+    };
+
+    window.nextQ = () => { if (currentIdx < questions.length - 1) { currentIdx++; renderQuestion(); } };
+    window.prevQ = () => { if (currentIdx > 0) { currentIdx--; renderQuestion(); } };
+    window.jumpTo = (i) => { currentIdx = i; renderQuestion(); };
+
+    window.confirmFinish = () => {
+        if (userAnswers.includes(null)) {
+            Swal.fire({ title: 'تنبيه!', text: "لم تقم بحل جميع الأسئلة، هل تريد الإرسال على أي حال؟", icon: 'warning', showCancelButton: true, confirmButtonText: 'نعم، أرسل' }).then((r) => { if (r.isConfirmed) submit(); });
+        } else { submit(); }
+    };
+
+    async function submit() {
+        Swal.fire({ title: 'جاري الحفظ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        let finalScore = 0;
+        userAnswers.forEach((ans, i) => { if (ans === questions[i].a) finalScore++; });
+
+        try {
+            await addDoc(collection(db, "philosophy_ranks"), {
+                ...studentData,
+                score: finalScore,
+                answers: userAnswers,
+                timestamp: serverTimestamp()
+            });
+            Swal.close();
+            showResults(finalScore);
+        } catch (e) { Swal.fire('خطأ!', 'فشل الإرسال، جرب تانى', 'error'); }
+    }
+
+    function showResults(score) {
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+        document.getElementById('finalScore').innerText = `${score} / 20`;
+
+        let reviewHtml = '<h3 style="margin-top:30px;">مراجعة الإجابات:</h3>';
+        questions.forEach((q, i) => {
+            const isCorrect = userAnswers[i] === q.a;
+            reviewHtml += `
+                <div class="review-item ${isCorrect ? 'correct' : 'wrong'}">
+                    <p><b>س${i+1}:</b> ${q.q}</p>
+                    <p>إجابتك: ${userAnswers[i] !== null ? q.options[userAnswers[i]] : 'لم تجب'}</p>
+                    ${!isCorrect ? `<p class="correct-ans">الإجابة الصحيحة: ${q.options[q.a]}</p>` : '<p class="correct-ans">إجابة صحيحة ✅</p>'}
+                </div>`;
+        });
+        document.getElementById('review-area').innerHTML = reviewHtml;
+    }
+</script>
+</body>
+</html>
