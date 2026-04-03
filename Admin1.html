@@ -23,6 +23,7 @@
         .btn-save { width: 100%; padding: 18px; background: var(--p); color: #000; border: none; border-radius: 10px; font-weight: 900; cursor: pointer; transition: 0.3s; font-size: 1rem; }
         .btn-save:hover { background: #fff; transform: translateY(-3px); box-shadow: 0 10px 20px rgba(204, 255, 0, 0.2); }
         .status { margin-top: 15px; font-weight: bold; text-align: center; }
+        .hint { font-size: 11px; color: #888; margin-bottom: 10px; display: block; }
     </style>
 </head>
 <body>
@@ -39,25 +40,27 @@
             <option value="history">التاريخ 📜</option>
             <option value="physics">الفيزياء ⚡</option>
         </select>
+        <span class="hint">* كل مادة لها إعدادات منفصلة في الفايرباز</span>
     </div>
 
     <div class="control-group">
-        <label>2. رابط الصورة (GitHub):</label>
-        <input type="text" id="imgName" placeholder="مثال: science_cert.png" oninput="updatePreview()">
+        <label>2. رابط صورة الشهادة (URL):</label>
+        <input type="text" id="imgName" placeholder="ضع رابط الصورة المباشر هنا" oninput="updatePreview()">
     </div>
 
     <div class="control-group">
-        <label>3. لون الخط ونوعه:</label>
+        <label>3. تخصيص الخط:</label>
+        <label class="hint">اللون:</label>
         <input type="color" id="textColor" value="#003366" oninput="updatePreview()">
-        <label>حجم الخط:</label>
-        <input type="range" id="fontSize" min="2" max="12" value="6" step="0.1" oninput="updatePreview()">
+        <label class="hint">الحجم:</label>
+        <input type="range" id="fontSize" min="2" max="15" value="6" step="0.1" oninput="updatePreview()">
     </div>
 
     <div class="control-group">
-        <label>4. التحكم في المكان (X & Y):</label>
-        <label style="font-size: 11px; color: #888;">رأسي (Y):</label>
-        <input type="range" id="yPos" min="0" max="100" value="52" oninput="updatePreview()">
-        <label style="font-size: 11px; color: #888;">أفقي (X):</label>
+        <label>4. ضبط موقع الاسم:</label>
+        <label class="hint">الارتفاع (Y):</label>
+        <input type="range" id="yPos" min="0" max="100" value="50" oninput="updatePreview()">
+        <label class="hint">التوسيط الأفقي (X):</label>
         <input type="range" id="xPos" min="0" max="100" value="50" oninput="updatePreview()">
     </div>
 
@@ -67,10 +70,10 @@
 
 <div class="preview-pane">
     <div style="margin-bottom: 15px; text-align: center;">
-        <span id="previewLabel" style="background: var(--cyan); color: #000; padding: 5px 15px; border-radius: 20px; font-weight: bold;">معاينة: العلوم</span>
+        <span id="previewLabel" style="background: var(--cyan); color: #000; padding: 5px 15px; border-radius: 20px; font-weight: bold;">معاينة المادة</span>
     </div>
     <canvas id="editorCanvas"></canvas>
-    <p style="color: #555; margin-top: 10px;">سيظهر اسم الطالب هنا تلقائياً في صفحة الأوائل</p>
+    <p style="color: #555; margin-top: 10px;">تحرك بالمؤشرات لضبط مكان اسم الطالب بدقة</p>
 </div>
 
 <script>
@@ -89,32 +92,64 @@
     const canvas = document.getElementById('editorCanvas');
     const ctx = canvas.getContext('2d');
     const template = new Image();
+    template.crossOrigin = "anonymous"; // لتجنب مشاكل الـ CORS عند التحميل
 
-    // تحميل الخط
+    // تحميل الخط الخاص بك
     const font = new FontFace('KareemFont', "url('خط.ttf')");
-    font.load().then(f => { document.fonts.add(f); updatePreview(); });
+    font.load().then(f => { 
+        document.fonts.add(f); 
+        updatePreview(); 
+    }).catch(err => console.log("Font error: ", err));
 
-    // جلب إعدادات المادة المختارة عند تغيير القائمة
+    // جلب إعدادات المادة من Firestore
     async function loadSubjectSettings() {
         const subject = document.getElementById('subjectSelect').value;
-        document.getElementById('previewLabel').innerText = "معاينة: " + document.getElementById('subjectSelect').options[document.getElementById('subjectSelect').selectedIndex].text;
+        const status = document.getElementById('status');
+        const selectedText = document.getElementById('subjectSelect').options[document.getElementById('subjectSelect').selectedIndex].text;
         
-        const doc = await db.collection("subject_certs").doc(subject).get();
-        if (doc.exists) {
-            const data = doc.data();
-            document.getElementById('imgName').value = data.img;
-            document.getElementById('textColor').value = data.color;
-            document.getElementById('yPos').value = data.yPos * 100;
-            document.getElementById('xPos').value = data.xPos * 100;
-            document.getElementById('fontSize').value = data.fontSize * 100;
+        document.getElementById('previewLabel').innerText = "معاينة: " + selectedText;
+        status.innerText = "⏳ جاري تحميل إعدادات " + selectedText;
+
+        try {
+            const doc = await db.collection("subject_certs").doc(subject).get();
+            if (doc.exists) {
+                const data = doc.data();
+                document.getElementById('imgName').value = data.img || '';
+                document.getElementById('textColor').value = data.color || '#000000';
+                document.getElementById('yPos').value = (data.yPos || 0.5) * 100;
+                document.getElementById('xPos').value = (data.xPos || 0.5) * 100;
+                document.getElementById('fontSize').value = (data.fontSize || 0.06) * 100;
+                status.innerText = "✅ تم تحميل الإعدادات";
+            } else {
+                status.innerText = "ℹ️ لا توجد إعدادات مسبقة، ابدأ الضبط الآن";
+                // قيم افتراضية لو المادة جديدة
+                document.getElementById('imgName').value = '';
+                document.getElementById('yPos').value = 50;
+                document.getElementById('xPos').value = 50;
+            }
+        } catch (e) {
+            console.error(e);
+            status.innerText = "❌ خطأ في التحميل";
         }
         updatePreview();
     }
 
     function updatePreview() {
-        template.src = document.getElementById('imgName').value || 'sh1.png';
+        const imgUrl = document.getElementById('imgName').value;
+        if(!imgUrl) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#111";
+            ctx.fillRect(0, 0, canvas.width || 300, canvas.height || 200);
+            ctx.fillStyle = "#fff";
+            ctx.textAlign = "center";
+            ctx.fillText("برجاء وضع رابط الصورة", canvas.width/2, canvas.height/2);
+            return;
+        }
+
+        template.src = imgUrl;
         template.onload = () => {
-            canvas.width = template.width; canvas.height = template.height;
+            canvas.width = template.width; 
+            canvas.height = template.height;
             ctx.drawImage(template, 0, 0);
             
             const x = document.getElementById('xPos').value / 100;
@@ -131,7 +166,7 @@
     async function saveToFirebase() {
         const subject = document.getElementById('subjectSelect').value;
         const status = document.getElementById('status');
-        status.innerText = "⏳ جاري الحفظ...";
+        status.innerText = "⏳ جاري الحفظ في " + subject + "...";
         
         const config = {
             img: document.getElementById('imgName').value,
@@ -139,19 +174,21 @@
             xPos: document.getElementById('xPos').value / 100,
             yPos: document.getElementById('yPos').value / 100,
             fontSize: document.getElementById('fontSize').value / 100,
-            subjectKey: subject
+            lastUpdate: new Date()
         };
 
         try {
-            await db.collection("subject_certs").doc(subject).set(config);
-            status.innerText = "✅ تم حفظ إعدادات " + subject + " بنجاح!";
+            await db.collection("subject_certs").doc(subject).set(config, { merge: true });
+            status.innerText = "✅ تم حفظ " + subject + " بنجاح!";
             status.style.color = "#ccff00";
         } catch (e) {
-            status.innerText = "❌ خطأ!";
+            status.innerText = "❌ فشل الحفظ!";
+            status.style.color = "#ff4444";
             console.error(e);
         }
     }
 
+    // التحميل عند فتح الصفحة لأول مرة
     window.onload = loadSubjectSettings;
 </script>
 </body>
