@@ -99,7 +99,7 @@
       // 3. جلب بيانات الفلسفة والمنطق (Firestore) - الجديد
       try {
           // الدرجة النهائية للفلسفة 20، لذا 18 درجة تعني 90%
-          const philSnap = await db.collection("philosophy_ranks").where("score", ">=", 18).get();
+          const philSnap = await db.collection("philosophy_ranks").where("score", ">=", 15).get();
           philSnap.forEach(doc => {
               const d = doc.data();
               if (d.hidden) return;
