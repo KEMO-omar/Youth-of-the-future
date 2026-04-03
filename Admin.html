@@ -80,7 +80,7 @@
 
 <div class="admin-wrapper">
     <div class="tabs-nav">
-        <button class="tab-btn active" onclick="showTab('since-tab', this)">📁 ملف Since</button>
+        <button class="tab-btn active" onclick="showTab('since-tab', this)">📁 الملف ال بيظهر و يختفي</button>
         <button class="tab-btn" onclick="showTab('exam-tab', this)">📝 إضافة امتحان</button>
         <button class="tab-btn" onclick="showTab('results-math', this)">📐 نتائج الرياضيات</button>
         <button class="tab-btn" onclick="showTab('results-science', this)">🧪 نتائج العلوم</button>
@@ -89,7 +89,7 @@
 
     <div id="since-tab" class="tab-content active">
         <div class="glass-card">
-            <h2>إدارة ملف Since.html</h2>
+            <h2>إدارة ملف</h2>
             <input type="text" id="sinceUrl" placeholder="رابط الملف (مثلاً: Since.html)">
             <div style="display:flex; gap:10px;">
                 <button class="btn btn-p" onclick="updateSince(true)">تفعيل وظهور</button>
@@ -199,7 +199,7 @@
   async function updateSince(active) {
       const url = document.getElementById('sinceUrl').value || "Since.html";
       await db.collection("settings").doc("since_file").set({ url, active });
-      Swal.fire('تم', 'تم تحديث حالة ملف Since', 'success');
+      Swal.fire('تم', 'تم تحديث حالة ملف ', 'success');
   }
 
   async function saveExam() {
