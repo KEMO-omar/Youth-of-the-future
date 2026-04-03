@@ -45,6 +45,22 @@
 
   .results-screen { display: none; animation: fadeIn 0.8s ease; text-align: center; }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* تنسيق القائمة المنسدلة في SweetAlert */
+  .swal2-select {
+    background: #1a2235 !important;
+    color: white !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 10px !important;
+    padding: 10px !important;
+    font-family: 'Cairo', sans-serif !important;
+  }
+  .swal2-input {
+    background: #1a2235 !important;
+    color: white !important;
+    border: 1px solid var(--border) !important;
+    font-family: 'Cairo', sans-serif !important;
+  }
 </style>
 </head>
 <body>
@@ -157,7 +173,7 @@ async function startQuiz() {
         html:
             '<input id="swal-input1" class="swal2-input" placeholder="الاسم بالكامل">' +
             '<input id="swal-input2" class="swal2-input" placeholder="رقم الواتساب">' +
-            '<select id="swal-input3" class="swal2-input">' +
+            '<select id="swal-input3" class="swal2-select" style="width: 80%; margin: 10px auto; display: block;">' +
             '<option value="" disabled selected>اختر مجموعتك</option>' +
             '<option value="الدراسه الاعظم">الدراسه الاعظم</option>' +
             '<option value="شباب المستقبل">شباب المستقبل</option>' +
@@ -244,6 +260,7 @@ async function finishQuiz() {
 
     await db.collection("science_ranks").add({ 
         name: studentData.name, 
+        phone: studentData.phone,
         group: studentData.group,
         score: pct, 
         time: timer, 
