@@ -79,6 +79,7 @@
 <div class="grid" id="winnersGrid"></div>
 
 <script>
+  // --- إعدادات Firebase ---
   const firebaseConfig = {
       apiKey: "AIzaSyBMBd9C41EyU7kWi06CVMgXrYFBVAvU1v8",
       authDomain: "shapap-13c58.firebaseapp.com",
@@ -93,8 +94,9 @@
   const db = firebase.firestore();
   const rdb = firebase.database();
 
+  // تغيير اسم الصورة إلى sh1.png بناءً على طلبك
   const template = new Image();
-  template.src = 'sh.png';
+  template.src = 'sh1.png';
 
   async function startEngine() {
       await Promise.all([
@@ -108,11 +110,11 @@
       let uniqueWinners = new Map();
 
       try {
-          // 1. فحص الرياضيات مع تجاهل المستبعدين (hidden)
+          // 1. فحص الرياضيات
           const mathSnap = await rdb.ref('results').once('value');
           mathSnap.forEach(child => {
               const d = child.val();
-              if (d.hidden === true) return; // الحذف المعنوي: لو hidden بـ true تخطاه
+              if (d.hidden === true) return; 
               
               const p = (d.score / d.total) * 100;
               if (p >= 90) {
@@ -120,11 +122,11 @@
               }
           });
 
-          // 2. فحص العلوم مع تجاهل المستبعدين (hidden)
+          // 2. فحص العلوم
           const sciSnap = await db.collection("science_ranks").where("score", ">=", 90).get();
           sciSnap.forEach(doc => {
               const d = doc.data();
-              if (d.hidden === true) return; // الحذف المعنوي: تخطاه
+              if (d.hidden === true) return; 
               
               updateMapIfHigher(uniqueWinners, d.name, d.score, d.score + '%', 'علوم');
           });
@@ -176,16 +178,24 @@
       });
   }
 
+  // --- التعديل الجوهري للرسم على الشهادة الجديدة ---
   function drawFinalCert(canvas, name) {
       const ctx = canvas.getContext('2d');
       canvas.width = template.width;
       canvas.height = template.height;
       ctx.drawImage(template, 0, 0);
-      const size = canvas.width * 0.055; 
+
+      // تحديد حجم الخط (أكبر قليلاً ليملأ الفراغ)
+      const size = canvas.width * 0.06; 
       ctx.font = `bold ${size}px 'KareemFont'`;
       ctx.textAlign = 'center';
-      ctx.fillStyle = '#5C3A27'; 
-      ctx.fillText(name, canvas.width / 2, canvas.height * 0.43);
+      
+      // تغيير اللون للأزرق الغامق ليناسب التصميم الجديد
+      ctx.fillStyle = '#003366'; 
+
+      // تعديل الموضع الرأسي (y) ليكون في السطر المخصص للاسم
+      // في التصميم الجديد، الموضع المثالي تقريباً عند 52% من ارتفاع الصورة
+      ctx.fillText(name, canvas.width / 2, canvas.height * 0.52);
   }
 
   startEngine();
