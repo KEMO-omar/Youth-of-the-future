@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>لوحة تحكم الشهادات | Admin 🛠️</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        body { font-family: sans-serif; background: #111; color: #fff; padding: 20px; text-align: center; }
+        .config-box { background: #222; padding: 20px; border-radius: 15px; max-width: 500px; margin: auto; border: 1px solid #00f2ff; }
+        input, select { width: 90%; padding: 10px; margin: 10px 0; border-radius: 5px; border: none; }
+        button { background: #00f2ff; color: #000; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .preview-area { margin-top: 20px; border: 1px dashed #555; padding: 10px; }
+    </style>
+</head>
+<body>
+
+    <h2>إعدادات الشهادة الحالية 🛠️</h2>
+    <div class="config-box">
+        <input type="text" id="certImg" placeholder="رابط صورة الشهادة (مثلاً sh1.png)">
+        <input type="text" id="subjectName" placeholder="اسم المادة (مثلاً علوم متكاملة)">
+        <input type="color" id="textColor" value="#003366">
+        <label>مكان النص (Y-axis %):</label>
+        <input type="range" id="textY" min="10" max="90" value="52">
+        <button onclick="saveSettings()">حفظ الإعدادات وتحديث الأوائل 🚀</button>
+    </div>
+
+    <script>
+        const firebaseConfig = { /* ضع إعداداتك هنا */ };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        async function saveSettings() {
+            const settings = {
+                img: document.getElementById('certImg').value,
+                subject: document.getElementById('subjectName').value,
+                color: document.getElementById('textColor').value,
+                yPos: document.getElementById('textY').value / 100, // تحويل لنسبة مئوية
+                updatedAt: new Date()
+            };
+
+            await db.collection("settings").doc("current_cert").set(settings);
+            alert("تم التحديث بنجاح! صفحة الأوائل ستتغير الآن.");
+        }
+    </script>
+</body>
+</html>
