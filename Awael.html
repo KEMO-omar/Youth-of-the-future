@@ -123,7 +123,7 @@
           });
 
           // 2. فحص العلوم
-          const sciSnap = await db.collection("science_ranks").where("score", ">=", 90).get();
+          const sciSnap = await db.collection("science_ranks").where("score", ">=", 80).get();
           sciSnap.forEach(doc => {
               const d = doc.data();
               if (d.hidden === true) return; 
