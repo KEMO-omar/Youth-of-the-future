@@ -2,46 +2,157 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>لوحة تحكم الشهادات | Admin 🛠️</title>
+    <title>إدارة شهادات المواد | Admin 🎨</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <style>
-        body { font-family: sans-serif; background: #111; color: #fff; padding: 20px; text-align: center; }
-        .config-box { background: #222; padding: 20px; border-radius: 15px; max-width: 500px; margin: auto; border: 1px solid #00f2ff; }
-        input, select { width: 90%; padding: 10px; margin: 10px 0; border-radius: 5px; border: none; }
-        button { background: #00f2ff; color: #000; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .preview-area { margin-top: 20px; border: 1px dashed #555; padding: 10px; }
+        :root { --p: #ccff00; --bg: #0a0a0a; --cyan: #00f2ff; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #fff; margin: 0; display: flex; height: 100vh; }
+        
+        .sidebar { width: 380px; background: #151515; padding: 20px; border-left: 1px solid #333; overflow-y: auto; }
+        .control-group { background: #222; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #444; }
+        label { display: block; margin-bottom: 8px; color: var(--cyan); font-weight: bold; font-size: 14px; }
+        
+        select, input[type="text"], input[type="range"] { 
+            width: 100%; padding: 12px; background: #111; border: 1px solid #444; color: #fff; border-radius: 8px; margin-bottom: 10px; font-family: inherit;
+        }
+
+        .preview-pane { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #000; padding: 20px; }
+        canvas { max-width: 100%; max-height: 75vh; border: 2px solid var(--p); border-radius: 10px; background: #111; }
+        
+        .btn-save { width: 100%; padding: 18px; background: var(--p); color: #000; border: none; border-radius: 10px; font-weight: 900; cursor: pointer; transition: 0.3s; font-size: 1rem; }
+        .btn-save:hover { background: #fff; transform: translateY(-3px); box-shadow: 0 10px 20px rgba(204, 255, 0, 0.2); }
+        .status { margin-top: 15px; font-weight: bold; text-align: center; }
     </style>
 </head>
 <body>
 
-    <h2>إعدادات الشهادة الحالية 🛠️</h2>
-    <div class="config-box">
-        <input type="text" id="certImg" placeholder="رابط صورة الشهادة (مثلاً sh1.png)">
-        <input type="text" id="subjectName" placeholder="اسم المادة (مثلاً علوم متكاملة)">
-        <input type="color" id="textColor" value="#003366">
-        <label>مكان النص (Y-axis %):</label>
-        <input type="range" id="textY" min="10" max="90" value="52">
-        <button onclick="saveSettings()">حفظ الإعدادات وتحديث الأوائل 🚀</button>
+<div class="sidebar">
+    <h2 style="color: var(--p); text-align: center;">إعدادات شهادات المواد 🏆</h2>
+    
+    <div class="control-group">
+        <label>1. اختر المادة المراد تعديلها:</label>
+        <select id="subjectSelect" onchange="loadSubjectSettings()">
+            <option value="science">العلوم المتكاملة 🧪</option>
+            <option value="math">الرياضيات 📐</option>
+            <option value="philosophy">الفلسفة والمنطق 🧠</option>
+            <option value="history">التاريخ 📜</option>
+            <option value="physics">الفيزياء ⚡</option>
+        </select>
     </div>
 
-    <script>
-        const firebaseConfig = { /* ضع إعداداتك هنا */ };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+    <div class="control-group">
+        <label>2. رابط الصورة (GitHub):</label>
+        <input type="text" id="imgName" placeholder="مثال: science_cert.png" oninput="updatePreview()">
+    </div>
 
-        async function saveSettings() {
-            const settings = {
-                img: document.getElementById('certImg').value,
-                subject: document.getElementById('subjectName').value,
-                color: document.getElementById('textColor').value,
-                yPos: document.getElementById('textY').value / 100, // تحويل لنسبة مئوية
-                updatedAt: new Date()
-            };
+    <div class="control-group">
+        <label>3. لون الخط ونوعه:</label>
+        <input type="color" id="textColor" value="#003366" oninput="updatePreview()">
+        <label>حجم الخط:</label>
+        <input type="range" id="fontSize" min="2" max="12" value="6" step="0.1" oninput="updatePreview()">
+    </div>
 
-            await db.collection("settings").doc("current_cert").set(settings);
-            alert("تم التحديث بنجاح! صفحة الأوائل ستتغير الآن.");
+    <div class="control-group">
+        <label>4. التحكم في المكان (X & Y):</label>
+        <label style="font-size: 11px; color: #888;">رأسي (Y):</label>
+        <input type="range" id="yPos" min="0" max="100" value="52" oninput="updatePreview()">
+        <label style="font-size: 11px; color: #888;">أفقي (X):</label>
+        <input type="range" id="xPos" min="0" max="100" value="50" oninput="updatePreview()">
+    </div>
+
+    <button class="btn-save" onclick="saveToFirebase()">حفظ إعدادات المادة 🚀</button>
+    <div id="status" class="status"></div>
+</div>
+
+<div class="preview-pane">
+    <div style="margin-bottom: 15px; text-align: center;">
+        <span id="previewLabel" style="background: var(--cyan); color: #000; padding: 5px 15px; border-radius: 20px; font-weight: bold;">معاينة: العلوم</span>
+    </div>
+    <canvas id="editorCanvas"></canvas>
+    <p style="color: #555; margin-top: 10px;">سيظهر اسم الطالب هنا تلقائياً في صفحة الأوائل</p>
+</div>
+
+<script>
+    // --- Firebase Configuration ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyBMBd9C41EyU7kWi06CVMgXrYFBVAvU1v8",
+        authDomain: "shapap-13c58.firebaseapp.com",
+        projectId: "shapap-13c58",
+        storageBucket: "shapap-13c58.firebasestorage.app",
+        messagingSenderId: "818487036065",
+        appId: "1:818487036065:web:350734adcc4fcd779c48e0"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const canvas = document.getElementById('editorCanvas');
+    const ctx = canvas.getContext('2d');
+    const template = new Image();
+
+    // تحميل الخط
+    const font = new FontFace('KareemFont', "url('خط.ttf')");
+    font.load().then(f => { document.fonts.add(f); updatePreview(); });
+
+    // جلب إعدادات المادة المختارة عند تغيير القائمة
+    async function loadSubjectSettings() {
+        const subject = document.getElementById('subjectSelect').value;
+        document.getElementById('previewLabel').innerText = "معاينة: " + document.getElementById('subjectSelect').options[document.getElementById('subjectSelect').selectedIndex].text;
+        
+        const doc = await db.collection("subject_certs").doc(subject).get();
+        if (doc.exists) {
+            const data = doc.data();
+            document.getElementById('imgName').value = data.img;
+            document.getElementById('textColor').value = data.color;
+            document.getElementById('yPos').value = data.yPos * 100;
+            document.getElementById('xPos').value = data.xPos * 100;
+            document.getElementById('fontSize').value = data.fontSize * 100;
         }
-    </script>
+        updatePreview();
+    }
+
+    function updatePreview() {
+        template.src = document.getElementById('imgName').value || 'sh1.png';
+        template.onload = () => {
+            canvas.width = template.width; canvas.height = template.height;
+            ctx.drawImage(template, 0, 0);
+            
+            const x = document.getElementById('xPos').value / 100;
+            const y = document.getElementById('yPos').value / 100;
+            const fSize = document.getElementById('fontSize').value / 100;
+            
+            ctx.font = `bold ${canvas.width * fSize}px 'KareemFont'`;
+            ctx.fillStyle = document.getElementById('textColor').value;
+            ctx.textAlign = 'center';
+            ctx.fillText("اسم بطل المستقبل", canvas.width * x, canvas.height * y);
+        };
+    }
+
+    async function saveToFirebase() {
+        const subject = document.getElementById('subjectSelect').value;
+        const status = document.getElementById('status');
+        status.innerText = "⏳ جاري الحفظ...";
+        
+        const config = {
+            img: document.getElementById('imgName').value,
+            color: document.getElementById('textColor').value,
+            xPos: document.getElementById('xPos').value / 100,
+            yPos: document.getElementById('yPos').value / 100,
+            fontSize: document.getElementById('fontSize').value / 100,
+            subjectKey: subject
+        };
+
+        try {
+            await db.collection("subject_certs").doc(subject).set(config);
+            status.innerText = "✅ تم حفظ إعدادات " + subject + " بنجاح!";
+            status.style.color = "#ccff00";
+        } catch (e) {
+            status.innerText = "❌ خطأ!";
+            console.error(e);
+        }
+    }
+
+    window.onload = loadSubjectSettings;
+</script>
 </body>
 </html>
