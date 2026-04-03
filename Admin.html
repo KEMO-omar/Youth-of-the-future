@@ -84,6 +84,7 @@
         <button class="tab-btn" onclick="showTab('exam-tab', this)">📝 إضافة امتحان</button>
         <button class="tab-btn" onclick="showTab('results-math', this)">📐 نتائج الرياضيات</button>
         <button class="tab-btn" onclick="showTab('results-science', this)">🧪 نتائج العلوم</button>
+        <button class="tab-btn" onclick="showTab('results-philosophy', this)">🧠 نتائج الفلسفة والمنطق</button>
         <button class="tab-btn" onclick="showTab('manage-tab', this)">⚙️ إدارة الامتحانات</button>
     </div>
 
@@ -156,6 +157,27 @@
         </div>
     </div>
 
+    <div id="results-philosophy" class="tab-content">
+        <div class="glass-card">
+            <h2 style="color:var(--p)">🧠 نتائج الفلسفة والمنطق (Firestore)</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>الاسم</th>
+                            <th>المجموعة/المجتمع</th>
+                            <th>رقم الواتساب</th>
+                            <th>الدرجة</th>
+                            <th>الوقت</th>
+                            <th>التاريخ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="philosophyBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <div id="manage-tab" class="tab-content">
         <div class="glass-card">
             <h2>⚙️ الامتحانات المنشورة حالياً</h2>
@@ -210,23 +232,20 @@
       
       await db.collection("exams").add({ title, desc, url, createdAt: Date.now() });
       Swal.fire('تم النشر', 'الامتحان متاح الآن لجميع الطلاب', 'success');
-      // مسح الحقول بعد النشر
       document.getElementById('exTitle').value = '';
       document.getElementById('exDesc').value = '';
       document.getElementById('exUrl').value = '';
   }
 
   function loadData() {
-      // 1. جلب الرياضيات وكشف المكررين
+      // 1. جلب الرياضيات
       rdb.ref('results').on('value', snap => {
           const body = document.getElementById('mathBody');
           body.innerHTML = '';
           let data = [];
           snap.forEach(child => { data.push({id: child.key, ...child.val()}); });
           data.sort((a, b) => b.score - a.score);
-
           const mathNames = data.reduce((acc, curr) => { acc[curr.name] = (acc[curr.name] || 0) + 1; return acc; }, {});
-
           data.forEach(d => {
               const isDup = mathNames[d.name] > 1;
               body.innerHTML += `
@@ -240,15 +259,13 @@
           });
       });
 
-      // 2. جلب العلوم وكشف المكررين
+      // 2. جلب العلوم
       db.collection("science_ranks").orderBy("score", "desc").onSnapshot(snap => {
           const body = document.getElementById('scienceBody');
           body.innerHTML = '';
           let scienceData = [];
           snap.forEach(doc => { scienceData.push({docId: doc.id, ...doc.data()}); });
-
           const scNames = scienceData.reduce((acc, curr) => { acc[curr.name] = (acc[curr.name] || 0) + 1; return acc; }, {});
-
           scienceData.forEach(d => {
               const isDup = scNames[d.name] > 1;
               body.innerHTML += `
@@ -263,6 +280,34 @@
           });
       });
 
+      // 3. جلب الفلسفة والمنطق (الجديد)
+      db.collection("philosophy_ranks").orderBy("timestamp", "desc").onSnapshot(snap => {
+          const body = document.getElementById('philosophyBody');
+          body.innerHTML = '';
+          let philData = [];
+          snap.forEach(doc => { philData.push({docId: doc.id, ...doc.data()}); });
+          
+          // كشف المكررين في الفلسفة
+          const philNames = philData.reduce((acc, curr) => { acc[curr.name] = (acc[curr.name] || 0) + 1; return acc; }, {});
+
+          philData.forEach(d => {
+              const isDup = philNames[d.name] > 1;
+              // تحويل الـ timestamp لتنسيق مقروء
+              const dateStr = d.date || (d.timestamp ? new Date(d.timestamp.seconds * 1000).toLocaleDateString('ar-EG') : '---');
+              const timeStr = d.time || (d.timestamp ? new Date(d.timestamp.seconds * 1000).toLocaleTimeString('ar-EG') : '---');
+
+              body.innerHTML += `
+                  <tr>
+                      <td>${isDup ? '<span class="badge-cheat">⚠️ مكرر</span>' : ''}<b>${d.name}</b></td>
+                      <td>${d.group || d.comm || '---'}</td>
+                      <td>${d.phone || '---'}</td>
+                      <td style="color:var(--p); font-weight:bold;">${d.score} / 20</td>
+                      <td>${timeStr}</td>
+                      <td style="font-size:10px;">${dateStr}</td>
+                  </tr>`;
+          });
+      });
+
       // جلب قائمة الإدارة
       db.collection("exams").orderBy("createdAt", "desc").onSnapshot(snap => {
           const list = document.getElementById('manageExamsList');
@@ -271,8 +316,8 @@
               list.innerHTML += `
                   <div style="display:flex; justify-content:space-between; padding:15px; border-bottom:1px solid #333; align-items:center;">
                       <div>
-                        <b>${doc.data().title}</b>
-                        <div style="font-size:11px; color:#777;">File: ${doc.data().url}</div>
+                          <b>${doc.data().title}</b>
+                          <div style="font-size:11px; color:#777;">File: ${doc.data().url}</div>
                       </div>
                       <button class="btn btn-red" onclick="deleteExam('${doc.id}')"><i class="fa fa-trash"></i></button>
                   </div>`;
