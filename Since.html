@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>كويز علوم متكاملة - تجربة احترافية 🏆</title>
+<title>كويز علوم متكاملة - مراجعة عبقرينو وكيمو 🏆</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -51,7 +51,7 @@
 
 <div class="container">
   <div class="header">
-    <h1 style="font-family: 'Tajawal'; font-weight: 900;">انتقال الطاقة في النظام البيئي</h1>
+    <h1 style="font-family: 'Tajawal'; font-weight: 900;">مراجعة العلوم النهائية - 20 سؤالاً</h1>
     <div class="progress-container"><div id="progressBar" class="progress-bar"></div></div>
     <p id="studentDisplay" style="color: var(--accent); font-weight: bold; margin-top: 10px;"></p>
   </div>
@@ -59,7 +59,7 @@
   <div id="quizSection" style="display:none;">
     <div class="score-bar">
       <div><span class="val" id="timerVal">0</span> <small>ثانية</small></div>
-      <div id="qCount" style="font-weight: bold; color: var(--muted);">1 / 15</div>
+      <div id="qCount" style="font-weight: bold; color: var(--muted);">1 / 20</div>
       <div><span class="val" id="scoreVal">0</span> <small>نقاط</small></div>
     </div>
 
@@ -98,7 +98,6 @@
 </div>
 
 <script>
-// --- الإعدادات ---
 const firebaseConfig = {
     apiKey: "AIzaSyBMBd9C41EyU7kWi06CVMgXrYFBVAvU1v8",
     authDomain: "shapap-13c58.firebaseapp.com",
@@ -110,47 +109,51 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
+// 20 سؤالاً جديداً تماماً من ملفات المراجعة
 const rawQuestions = [
-  { q: "أي من المخلوقات الحية التالية يُعتبر ذاتي التغذية (Autotroph)؟", opts: ["الأرنب", "الأسد", "طحلب أخضر", "الضبع"], ans: 2 },
-  { q: "تنتقل الطاقة بين المستويات الغذائية المتتالية بنسبة لا تتجاوز:", opts: ["1%", "50%", "10%", "25%"], ans: 2 },
-  { q: "ما المقصود بـ 'الشبكة الغذائية'؟", opts: ["سلسلة واحدة خطية", "مجموعة سلاسل متشابكة", "علاقة بين نبات وحيوان", "تدفق المياه"], ans: 1 },
-  { q: "الكائنات التي تحصل على طاقتها بأكل كائنات أخرى تُسمى:", opts: ["ذاتية التغذية", "مستهلكات", "منتجات أولية", "المحللات"], ans: 1 },
-  { q: "في هرم الطاقة، أي المستويات يمتلك أعلى كمية من الطاقة؟", opts: ["المستهلكات الثانوية", "المستهلكات الأولية", "المستهلكات الثالثية", "المنتجات الأولية"], ans: 3 },
-  { q: "آكلات الأعشاب مثل الأرانب والبقر تُصنَّف ضمن:", opts: ["المنتجات الأولية", "المستهلكات الأولية", "المستهلكات الثانوية", "المحللات"], ans: 1 },
-  { q: "الفطريات والبكتيريا التي تحلل المواد العضوية الميتة تسمى:", opts: ["منتجات", "مفترسات", "المحللات", "آكلات أعشاب"], ans: 2 },
-  { q: "في السلسلة: عشب ← جراد ← ضفدع ← أفعى، الضفدع يُعتبر:", opts: ["منتجاً", "مستهلكاً أولياً", "مستهلكاً ثانوياً", "محللاً"], ans: 2 },
-  { q: "ما مصدر الطاقة الأساسي لمعظم النظم البيئية؟", opts: ["الحرارة الأرضية", "الطاقة الكيميائية", "ضوء الشمس", "طاقة الرياح"], ans: 2 },
-  { q: "هرم الأعداد يمثل في كل مستوى غذائي:", opts: ["كمية الطاقة", "الكتلة الحيوية", "عدد الأفراد", "نسبة الانتقال"], ans: 2 },
-  { q: "المخلوقات التي تتغذى على أجزاء من المواد الميتة تُسمى:", opts: ["مستهلكات ثانية", "منتجات", "المخلوقات الكانسة", "آكلات أعشاب"], ans: 2 },
-  { q: "الكتلة الحيوية (Biomass) تعني:", opts: ["الطاقة المفقودة", "إجمالي كتلة المادة الحية", "تنوع الأنواع", "كمية CO2"], ans: 1 },
-  { q: "في عملية البناء الضوئي، ينتج النبات:", opts: ["CO2 وماء", "جلوكوز وأكسجين", "طاقة وحرارة", "نيتروجين"], ans: 1 },
-  { q: "لماذا تُعتبر النباتات أساساً لكل النظم البيئية؟", opts: ["لأنها الأكثر عدداً", "لأنها توفر الطاقة للجميع", "لأنها تتحلل بسرعة", "لأنها تمتص حرارة الأرض"], ans: 1 },
-  { q: "إذا كان المنتج يحتوي على 10,000 وحدة طاقة، كم يصل للمستهلك الثانوي؟", opts: ["1000 وحدة", "100 وحدة", "500 وحدة", "5000 وحدة"], ans: 1 }
+  { q: "ينتقل الكربون من النبات إلى الحيوان عبر عملية:", opts: ["التنفس", "التبخر", "التحلل", "التغذية"], ans: 3 },
+  { q: "تحلل اليوريا في التربة بفعل البكتيريا ينتج عنه:", opts: ["أمونيا ثم نترات", "غاز أكسجين", "فوسفات صخري", "صدى صوتي"], ans: 0 },
+  { q: "العملية التي تحرر الفوسفور من الصخور تسمى:", opts: ["التنفس", "التبخر", "التجوية", "النيترة"], ans: 2 },
+  { q: "تعتمد قوة ارتداد الموجات فوق الصوتية في التشخيص الطبي على:", opts: ["لون العضو", "درجة الحرارة", "المقاومة الصوتية للنسيج", "كمية اليوريا"], ans: 2 },
+  { q: "أي من الحجرات التالية في القلب تستقبل الدم العائد من الرئتين؟", opts: ["البطين الأيمن", "الأذين الأيسر", "الأذين الأيمن", "البطين الأيسر"], ans: 1 },
+  { q: "الشريان الوحيد في جسم الإنسان الذي يحمل دماً غير مؤكسج هو:", opts: ["الشريان الأورطي", "الشريان الكلوي", "الشريان الرئوي", "الشريان الكبدي"], ans: 2 },
+  { q: "ما هي وحدة التنقية (الفلترة) الأساسية داخل الكلى؟", opts: ["الحالب", "النفيرون", "المثانة", "الكبد"], ans: 1 },
+  { q: "تعتمد لزوجة الدم في المقام الأول على تركيز:", opts: ["الجلوكوز", "الهيموجلوبين", "الأملاح", "الماء"], ans: 1 },
+  { q: "أعلى ضغط دم في الدورة الدموية يكون عند:", opts: ["الوريد الأجوف", "الشريان الرئوي", "الشريان الأورطي", "الشعيرات الدموية"], ans: 2 },
+  { q: "تتم عملية تبادل الغازات في الرئتين داخل:", opts: ["الشعيبات الهوائية", "الحويصلات الهوائية", "القصيبات", "البلعوم"], ans: 1 },
+  { q: "المسؤول عن نقل السكر والغذاء الجاهز من الأوراق إلى باقي أجزاء النبات هو:", opts: ["الخشب", "اللحاء", "النخاع", "البشرة"], ans: 1 },
+  { q: "أي من العمليات التالية تساهم في تلطيف درجة حرارة النبات في الصيف؟", opts: ["التنفس", "النتح", "البناء الضوئي", "التحلل"], ans: 1 },
+  { q: "تُعتبر الفضلات النيتروجينية نتاجاً لتكسير:", opts: ["السكريات", "الدهون", "البروتينات", "الفيتامينات"], ans: 2 },
+  { q: "العلاقة بين ضغط الدم واللزوجة هي علاقة:", opts: ["عكسية", "طردية", "ثابتة", "لا توجد علاقة"], ans: 1 },
+  { q: "دورة الكربون يتم فيها إطلاق غاز CO2 للغلاف الجوي عبر:", opts: ["البناء الضوئي", "التبخر", "التنفس والاحتراق", "الترسيب"], ans: 2 },
+  { q: "عند فحص الكبد، يساهم جهاز السونار في تحديد:", opts: ["نسبة السكر", "كفاءة الفلترة", "حجم الكبد وتواجد تليفات", "كمية البول"], ans: 2 },
+  { q: "في الدورة الدموية الصغرى، يخرج الدم من البطين الأيمن متجهاً إلى:", opts: ["الكبد", "الرئتين", "الدماغ", "الأطراف"], ans: 1 },
+  { q: "المركب الذي يمثل 'عملة الطاقة' في الخلية هو:", opts: ["DNA", "ATP", "RNA", "الماء"], ans: 1 },
+  { q: "يقوم الجلد بالتخلص من الفضلات والأملاح الزائدة عن طريق:", opts: ["الدهون", "الغدد العرقية", "المسام التنفسية", "الشعيرات"], ans: 1 },
+  { q: "لماذا لا يمثل الفوسفور ملوثاً للغلاف الجوي عادة؟", opts: ["لأنه غاز خامل", "لأنه لا يتواجد في حالة غازية طبيعياً", "لأنه يذوب في الماء", "لأنه مفيد جداً"], ans: 1 }
 ];
 
 let questions = [];
 let currentIdx = 0;
-let userAnswers = Array(15).fill(-1);
+let userAnswers = Array(20).fill(-1);
 let studentData = { name: "", phone: "", group: "" };
 let timer = 0;
 let timerInt;
 
 async function startQuiz() {
-    // التحقق من وجود نتيجة محفوظة
     const savedScore = localStorage.getItem('last_quiz_score');
     if (savedScore) {
         const data = JSON.parse(savedScore);
         Swal.fire({
-            title: 'لديك نتيجة سابقة!',
-            html: `أهلاً ${data.name}<br>درجتك الأخيرة هي: <b>${data.score}%</b>`,
+            title: 'مرحباً مجدداً!',
+            html: `أهلاً ${data.name}<br>نتيجتك السابقة: <b>${data.score}%</b>`,
             icon: 'info',
-            confirmButtonText: 'إعادة الاختبار',
             background: '#111827', color: '#fff'
         });
     }
 
     const { value: formValues } = await Swal.fire({
-        title: 'مرحباً بك يا بطل',
+        title: 'امتحان علوم كريم وعبقرينو ادخل بياناتك',
         html:
             '<input id="swal-input1" class="swal2-input" placeholder="الاسم بالكامل">' +
             '<input id="swal-input2" class="swal2-input" placeholder="رقم الواتساب">' +
@@ -160,33 +163,28 @@ async function startQuiz() {
             '<option value="شباب المستقبل">شباب المستقبل</option>' +
             '<option value="طلاب اولى ثانوي ازهر و عام">طلاب اولى ثانوي ازهر و عام</option>' +
             '<option value="اولى ثانوي">اولى ثانوي</option>' +
-            '<option value="الطريق الى الجنه">الطريق الى الجنه</option>' +
+            '<option value="الطريق الى النجاح">الطريق الى النجاح</option>' +
             '</select>',
         focusConfirm: false,
-        confirmButtonText: 'ابدأ الآن 🚀',
-        allowOutsideClick: false,
+        confirmButtonText: 'ابدأ التحدي 🚀',
         background: '#111827', color: '#fff',
         preConfirm: () => {
             const name = document.getElementById('swal-input1').value;
             const phone = document.getElementById('swal-input2').value;
             const group = document.getElementById('swal-input3').value;
-            if (!name || !phone || !group) {
-                Swal.showValidationMessage('الرجاء إكمال جميع البيانات');
-            }
+            if (!name || !phone || !group) Swal.showValidationMessage('الرجاء إكمال البيانات');
             return { name, phone, group };
         }
     });
 
     if (formValues) {
         studentData = formValues;
-        document.getElementById('studentDisplay').innerText = `المتسابق: ${studentData.name} | ${studentData.group}`;
-        
+        document.getElementById('studentDisplay').innerText = `المتسابق: ${studentData.name}`;
         questions = rawQuestions.sort(() => Math.random() - 0.5).map(q => {
             const correctText = q.opts[q.ans];
             const shuffled = [...q.opts].sort(() => Math.random() - 0.5);
             return { q: q.q, opts: shuffled, ans: shuffled.indexOf(correctText) };
         });
-
         document.getElementById('quizSection').style.display = 'block';
         startTimer();
         renderQuestion();
@@ -195,50 +193,38 @@ async function startQuiz() {
 
 function renderQuestion() {
     const q = questions[currentIdx];
-    document.getElementById('qCount').innerText = `${currentIdx + 1} / ${questions.length}`;
+    document.getElementById('qCount').innerText = `${currentIdx + 1} / 20`;
     document.getElementById('questionText').innerText = q.q;
     const container = document.getElementById('optionsContainer');
     container.innerHTML = '';
-
     q.opts.forEach((opt, i) => {
         const div = document.createElement('div');
         div.className = `option ${userAnswers[currentIdx] === i ? 'selected' : ''}`;
         div.innerHTML = `<span>${opt}</span>`;
-        div.onclick = () => {
-            userAnswers[currentIdx] = i;
-            renderQuestion();
-        };
+        div.onclick = () => { userAnswers[currentIdx] = i; renderQuestion(); };
         container.appendChild(div);
     });
-
-    document.getElementById('progressBar').style.width = `${((currentIdx + 1) / questions.length) * 100}%`;
+    document.getElementById('progressBar').style.width = `${((currentIdx + 1) / 20) * 100}%`;
     document.getElementById('prevBtn').disabled = currentIdx === 0;
-    document.getElementById('nextBtn').innerText = currentIdx === questions.length - 1 ? 'تسليم الاختبار 🏁' : 'التالي ←';
+    document.getElementById('nextBtn').innerText = currentIdx === 19 ? 'تسليم الاختبار 🏁' : 'التالي ←';
 }
 
 function prevQuestion() { if(currentIdx > 0) { currentIdx--; renderQuestion(); } }
 
 function handleNext() {
     if (userAnswers[currentIdx] === -1) {
-        Swal.fire({ icon: 'warning', text: 'الرجاء اختيار إجابة للمتابعة', background: '#111827', color: '#fff' });
+        Swal.fire({ icon: 'warning', text: 'اختر إجابة أولاً', background: '#111827', color: '#fff' });
         return;
     }
-    if(currentIdx < questions.length - 1) {
-        currentIdx++;
-        renderQuestion();
-    } else {
-        confirmSubmit();
-    }
+    if(currentIdx < 19) { currentIdx++; renderQuestion(); } else { confirmSubmit(); }
 }
 
 async function confirmSubmit() {
     const { isConfirmed } = await Swal.fire({
-        title: 'إنهاء الاختبار؟',
-        text: 'هل أنت متأكد من تسليم جميع الإجابات؟',
+        title: 'هل تريد التسليم؟',
         icon: 'question',
         showCancelButton: true,
         confirmButtonText: 'نعم، سلم الآن',
-        cancelButtonText: 'مراجعة الأسئلة',
         background: '#111827', color: '#fff'
     });
     if(isConfirmed) finishQuiz();
@@ -246,38 +232,26 @@ async function confirmSubmit() {
 
 async function finishQuiz() {
     clearInterval(timerInt);
-    let finalScore = 0;
-    questions.forEach((q, i) => { if(userAnswers[i] === q.ans) finalScore++; });
-    const finalPct = Math.round((finalScore / questions.length) * 100);
+    let score = 0;
+    questions.forEach((q, i) => { if(userAnswers[i] === q.ans) score++; });
+    const pct = Math.round((score / 20) * 100);
 
-    // حفظ في المتصفح (LocalStorage)
-    localStorage.setItem('last_quiz_score', JSON.stringify({
-        name: studentData.name,
-        score: finalPct,
-        at: Date.now()
-    }));
+    localStorage.setItem('last_quiz_score', JSON.stringify({ name: studentData.name, score: pct }));
 
     document.getElementById('quizSection').style.display = 'none';
     document.getElementById('resultsScreen').style.display = 'block';
-    document.getElementById('finalScore').innerText = `${finalPct}%`;
-    document.getElementById('resultFeedback').innerText = finalPct >= 50 ? "أداء متميز! استمر في التقدم." : "تحتاج إلى مزيد من المذاكرة، حاول مرة أخرى.";
+    document.getElementById('finalScore').innerText = `${pct}%`;
 
-    // الحفظ في Firebase مع البيانات الجديدة
     await db.collection("science_ranks").add({ 
         name: studentData.name, 
-        phone: studentData.phone,
         group: studentData.group,
-        score: finalPct, 
+        score: pct, 
         time: timer, 
         at: Date.now() 
     });
     
     generateReview();
     showLeaderboard();
-}
-
-function resetQuiz() {
-    location.reload();
 }
 
 function generateReview() {
@@ -289,10 +263,10 @@ function generateReview() {
         div.className = 'review-item';
         div.style.borderRightColor = isCorrect ? '#10b981' : '#ef4444';
         div.innerHTML = `
-            <span class="status-badge" style="background:${isCorrect ? '#10b981' : '#ef4444'}">${isCorrect ? 'إجابة صحيحة' : 'إجابة خاطئة'}</span>
-            <p style="font-weight:bold; margin-bottom:5px;">س ${i+1}: ${q.q}</p>
-            <p>إجابتك: <span style="color:${isCorrect ? '#10b981' : '#ef4444'}">${userAnswers[i] !== -1 ? q.opts[userAnswers[i]] : 'لم يتم الإجابة'}</span></p>
-            ${!isCorrect ? `<p style="color:#10b981">الإجابة الصحيحة: ${q.opts[q.ans]}</p>` : ''}
+            <span class="status-badge" style="background:${isCorrect ? '#10b981' : '#ef4444'}">${isCorrect ? 'صح' : 'خطأ'}</span>
+            <p>س ${i+1}: ${q.q}</p>
+            <p>إجابتك: ${userAnswers[i] !== -1 ? q.opts[userAnswers[i]] : 'لا يوجد'}</p>
+            ${!isCorrect ? `<p style="color:#10b981">الصح: ${q.opts[q.ans]}</p>` : ''}
         `;
         container.appendChild(div);
     });
@@ -301,25 +275,24 @@ function generateReview() {
 function toggleReview() {
     const sec = document.getElementById('reviewSection');
     sec.style.display = sec.style.display === 'none' ? 'block' : 'none';
-    if(sec.style.display === 'block') sec.scrollIntoView({ behavior: 'smooth' });
 }
 
 function startTimer() { timerInt = setInterval(() => { timer++; document.getElementById('timerVal').innerText = timer; }, 1000); }
 
 async function showLeaderboard() {
     const listDiv = document.getElementById('leaderboardList');
-    listDiv.innerHTML = '<p>جاري تحميل المتصدرين...</p>';
     const snap = await db.collection("science_ranks").orderBy("score", "desc").orderBy("time", "asc").limit(5).get();
     listDiv.innerHTML = '';
     snap.forEach((doc, i) => {
         const d = doc.data();
-        listDiv.innerHTML += `<div style="display:flex; justify-content:space-between; padding:12px; border-bottom:1px solid var(--border)">
-            <span>${i+1}. ${d.name} (${d.group})</span>
-            <span><b>${d.score}%</b> <small style="color:var(--muted)">(${d.time}ث)</small></span>
+        listDiv.innerHTML += `<div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid var(--border)">
+            <span>${i+1}. ${d.name}</span>
+            <span><b>${d.score}%</b> (${d.time}ث)</span>
         </div>`;
     });
 }
 
+function resetQuiz() { location.reload(); }
 window.onload = startQuiz;
 </script>
 </body>
