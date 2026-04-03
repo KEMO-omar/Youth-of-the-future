@@ -63,6 +63,7 @@
   async function startEngine() {
       try {
           await document.fonts.load("1em KareemFont");
+          // جلب إعدادات الشهادات لكل المواد (math, science, philosophy)
           const settingsSnap = await db.collection("subject_certs").get();
           settingsSnap.forEach(doc => { subjectConfigs[doc.id] = doc.data(); });
           loadAllData();
@@ -72,7 +73,7 @@
   async function loadAllData() {
       let uniqueWinners = new Map();
 
-      // جلب بيانات الرياضيات
+      // 1. جلب بيانات الرياضيات (Realtime DB)
       try {
           const mathSnap = await rdb.ref('results').once('value');
           mathSnap.forEach(child => {
@@ -85,7 +86,7 @@
           });
       } catch(e) {}
 
-      // جلب بيانات العلوم
+      // 2. جلب بيانات العلوم (Firestore)
       try {
           const sciSnap = await db.collection("science_ranks").where("score", ">=", 90).get();
           sciSnap.forEach(doc => {
@@ -95,14 +96,26 @@
           });
       } catch(e) {}
 
+      // 3. جلب بيانات الفلسفة والمنطق (Firestore) - الجديد
+      try {
+          // الدرجة النهائية للفلسفة 20، لذا 18 درجة تعني 90%
+          const philSnap = await db.collection("philosophy_ranks").where("score", ">=", 18).get();
+          philSnap.forEach(doc => {
+              const d = doc.data();
+              if (d.hidden) return;
+              const percentage = (d.score / 20) * 100;
+              addOrUpdateWinner(uniqueWinners, d.name, percentage, d.score + '/20', 'الفلسفة والمنطق', 'philosophy');
+          });
+      } catch(e) {}
+
       let winners = Array.from(uniqueWinners.values()).sort((a, b) => b.perc - a.perc);
       renderGrid(winners);
   }
 
   function addOrUpdateWinner(map, name, perc, display, subjectName, key) {
-      if (!map.has(name) || map.get(name).perc < perc) {
-          map.set(name, { name, perc, display, subject: subjectName, key });
-      }
+      // نستخدم الاسم + المادة كمفتاح فريد عشان لو حد متفوق في مادتين تطلع له شهادتين
+      const uniqueKey = name + "_" + key;
+      map.set(uniqueKey, { name, perc, display, subject: subjectName, key });
   }
 
   function renderGrid(winners) {
@@ -110,20 +123,23 @@
       grid.innerHTML = "";
       document.getElementById('loader').style.display = 'none';
 
-      winners.forEach(w => {
+      winners.forEach((w, index) => {
           const card = document.createElement('div');
           card.className = 'winner-card';
+          // إنشاء ID فريد للكانفس
+          const canvasId = `canvas-${index}`;
           card.innerHTML = `
             <div class="info-tag">
                 <span class="subject-badge">${w.subject}</span>
                 <span class="score-badge">${w.display}</span>
             </div>
             <div style="font-weight:900;">${w.name}</div>
-            <canvas id="canvas-${w.name.replace(/\s+/g, '')}"></canvas>
+            <canvas id="${canvasId}"></canvas>
+            <p style="font-size:10px; color:#666; margin-top:5px;">اضغط للتحميل 📥</p>
           `;
           grid.appendChild(card);
           
-          const canvas = card.querySelector('canvas');
+          const canvas = document.getElementById(canvasId);
           drawCert(canvas, w.name, w.key);
       });
   }
@@ -146,12 +162,14 @@
           ctx.font = `bold ${canvas.width * fSize}px 'KareemFont'`;
           ctx.fillStyle = config.color || '#000';
           ctx.textAlign = 'center';
+          
+          // رسم الاسم بناءً على الإحداثيات المسجلة لكل مادة في الفايرباز
           ctx.fillText(name, canvas.width * (config.xPos || 0.5), canvas.height * (config.yPos || 0.5));
       };
 
       canvas.onclick = () => {
           const link = document.createElement('a');
-          link.download = `شهادة-${name}.png`;
+          link.download = `شهادة-${name}-${key}.png`;
           link.href = canvas.toDataURL();
           link.click();
       };
