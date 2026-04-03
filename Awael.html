@@ -88,7 +88,7 @@
 
       // 2. جلب بيانات العلوم (Firestore)
       try {
-          const sciSnap = await db.collection("science_ranks").where("score", ">=", 90).get();
+          const sciSnap = await db.collection("science_ranks").where("score", ">=", 75).get();
           sciSnap.forEach(doc => {
               const d = doc.data();
               if (d.hidden) return;
