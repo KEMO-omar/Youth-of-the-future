@@ -73,19 +73,36 @@
   async function loadAllData() {
       let uniqueWinners = new Map();
 
-      // 1. جلب بيانات الرياضيات (Realtime DB)
+// 1. جلب بيانات الرياضيات (Realtime DB) - التعديل هنا
       try {
+          // الوصول للمسار 'results' كما في الصورة
           const mathSnap = await rdb.ref('results').once('value');
-          mathSnap.forEach(child => {
-              const d = child.val();
-              if (d.hidden) return;
-              const p = (d.score / d.total) * 100;
-              if (p >= 70) {
-                  addOrUpdateWinner(uniqueWinners, d.name, p, `${d.score}/${d.total}`, 'الرياضيات', 'math');
-              }
-          });
-      } catch(e) {}
-
+          const data = mathSnap.val();
+          
+          if (data) {
+              Object.keys(data).forEach(key => {
+                  const d = data[key];
+                  // التأكد من وجود البيانات المطلوبة وعدم إخفائها
+                  if (d.name && d.score !== undefined && d.total && !d.hidden) {
+                      const percentage = (d.score / d.total) * 100;
+                      
+                      // شرط الظهور في لوحة الأبطال (70% أو أكثر)
+                      if (percentage >= 70) {
+                          addOrUpdateWinner(
+                              uniqueWinners, 
+                              d.name, 
+                              percentage, 
+                              `${d.score}/${d.total}`, 
+                              'الرياضيات', 
+                              'math'
+                          );
+                      }
+                  }
+              });
+          }
+      } catch(e) {
+          console.error("Error loading Math data:", e);
+      }
       // 2. جلب بيانات العلوم (Firestore)
       try {
           const sciSnap = await db.collection("science_ranks").where("score", ">=", 75).get();
