@@ -80,7 +80,7 @@
               const d = child.val();
               if (d.hidden) return;
               const p = (d.score / d.total) * 100;
-              if (p >= 90) {
+              if (p >= 70) {
                   addOrUpdateWinner(uniqueWinners, d.name, p, `${d.score}/${d.total}`, 'الرياضيات', 'math');
               }
           });
